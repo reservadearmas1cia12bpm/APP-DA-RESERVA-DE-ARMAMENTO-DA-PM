@@ -1,5 +1,4 @@
-import { Material, Personnel, Cautela, SystemLog, AppSettings, Armorer, GoogleDriveConfig, GoogleDriveFile, BackupFrequency, DailyPart } from '../types';
-import JSZip from 'jszip';
+import { Material, Personnel, Cautela, SystemLog, AppSettings, GoogleDriveConfig, GoogleDriveFile, BackupFrequency, DailyPart } from '../types';
 
 const KEYS = {
   MATERIALS: 'sentinela_materials',
@@ -106,14 +105,11 @@ export const StorageService = {
 
   createBackup: async (initiator: string = 'Sistema') => {
     const backupData = StorageService.generateBackupData();
-    const jsonContent = JSON.stringify(backupData);
-    const fileName = `backup_sentinela_${new Date().toISOString().replace(/[:.]/g, '-')}.zip`;
+    const jsonContent = JSON.stringify(backupData, null, 2);
+    const fileName = `backup_sentinela_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
     
     try {
-        const zip = new JSZip();
-        zip.file("backup_sentinela.json", jsonContent);
-        
-        const blob = await zip.generateAsync({type: "blob"});
+        const blob = new Blob([jsonContent], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         
         const downloadAnchorNode = document.createElement('a');
@@ -127,14 +123,13 @@ export const StorageService = {
         StorageService.addLog(initiator, 'Backup Local', `Backup criado e baixado. Tamanho: ${blob.size} bytes`);
         return true;
     } catch (e) {
-        console.error("Error creating zip backup", e);
-        StorageService.addLog(initiator, 'Erro Backup', 'Falha ao gerar arquivo ZIP local.');
+        console.error("Error creating backup", e);
+        StorageService.addLog(initiator, 'Erro Backup', 'Falha ao gerar arquivo de backup.');
         return false;
     }
   },
 
   createExcelBackup: async (initiator: string = 'Sistema') => {
-      const zip = new JSZip();
       const dateStr = new Date().toISOString().split('T')[0];
 
       // Helper to escape CSV fields
@@ -163,8 +158,7 @@ export const StorageService = {
           m.notes || ''
       ]);
       const matCSV = "\uFEFF" + [matHeaders.join(';'), ...matRows.map(r => r.map(escape).join(';'))].join('\n');
-      zip.file("inventario_materiais.csv", matCSV);
-
+      
       // 2. Efetivo
       const personnel = StorageService.getPersonnel();
       const perHeaders = ['Nome', 'Posto/Grad', 'Matrícula', 'CPF', 'Unidade', 'Área', 'Telefone', 'Status', 'Obs'];
@@ -180,7 +174,6 @@ export const StorageService = {
           p.notes || ''
       ]);
       const perCSV = "\uFEFF" + [perHeaders.join(';'), ...perRows.map(r => r.map(escape).join(';'))].join('\n');
-      zip.file("efetivo_policial.csv", perCSV);
 
       // 3. Cautelas
       const cautelas = StorageService.getCautelas();
@@ -197,22 +190,24 @@ export const StorageService = {
           c.notesIn || ''
       ]);
       const cauCSV = "\uFEFF" + [cauHeaders.join(';'), ...cauRows.map(r => r.map(escape).join(';'))].join('\n');
-      zip.file("historico_cautelas.csv", cauCSV);
+
+      // Create single CSV with multiple sheets indicator
+      const combinedCSV = `INVENTÁRIO DE MATERIAIS\n${matCSV}\n\nEFETIVO POLICIAL\n${perCSV}\n\nHISTÓRICO DE CAUTELAS\n${cauCSV}`;
 
       try {
-          const blob = await zip.generateAsync({type: "blob"});
+          const blob = new Blob([combinedCSV], { type: 'text/csv;charset=utf-8;' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `sentinela_excel_export_${dateStr}.zip`;
+          a.download = `sentinela_export_${dateStr}.csv`;
           document.body.appendChild(a);
           a.click();
           a.remove();
           URL.revokeObjectURL(url);
-          StorageService.addLog(initiator, 'Exportação Excel', 'Dados exportados para Planilha (CSV/ZIP).');
+          StorageService.addLog(initiator, 'Exportação Excel', 'Dados exportados para CSV.');
           return true;
       } catch (e) {
-          console.error("Error creating excel export", e);
+          console.error("Error creating CSV export", e);
           return false;
       }
   },
@@ -249,39 +244,25 @@ export const StorageService = {
         return;
     }
 
-    if (file.name.endsWith('.zip') || file.type.includes('zip')) {
-        JSZip.loadAsync(file).then((zip) => {
-            const jsonFile = Object.keys(zip.files).find(name => name.endsWith('.json'));
-            if (jsonFile) {
-                return zip.file(jsonFile)?.async("string");
-            }
-            throw new Error("JSON file not found in ZIP");
-        }).then((content) => {
-            if (content) processJson(content);
-            else callback(false, "ZIP vazio ou ilegível.");
-        }).catch((e) => {
-            console.error("Error reading zip", e);
-            callback(false, "Erro ao ler arquivo ZIP.");
-        });
-    } else {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-             if (event.target?.result) {
-                 processJson(event.target.result as string);
-             } else {
-                 callback(false, "Falha na leitura do arquivo.");
-             }
-        };
-        reader.readAsText(file);
-    }
+    // For file uploads
+    const reader = new FileReader();
+    reader.onload = (event) => {
+         if (event.target?.result) {
+             processJson(event.target.result as string);
+         } else {
+             callback(false, "Falha na leitura do arquivo.");
+         }
+    };
+    reader.readAsText(file);
   },
   
   exportCSV: (data: any[], filename: string) => {
-     // Legacy wrapper if needed
+     // Legacy wrapper - mantido para compatibilidade
+     console.log('Export CSV called:', filename);
   }
 };
 
-// Google Drive Integration Service
+// Google Drive Integration Service (Simplified - sem backup automático complexo)
 export const GoogleDriveService = {
     tokenClient: null as any,
     
@@ -329,56 +310,22 @@ export const GoogleDriveService = {
         });
     },
 
-    findOrCreateFolderChain: async (accessToken: string): Promise<string> => {
-        const createFolder = async (name: string, parentId?: string) => {
-            const metadata = {
-                name: name,
-                mimeType: 'application/vnd.google-apps.folder',
-                parents: parentId ? [parentId] : []
-            };
-            const response = await fetch('https://www.googleapis.com/drive/v3/files', {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
-                body: JSON.stringify(metadata)
-            });
-            const data = await response.json();
-            return data.id;
-        };
-
-        const findFolder = async (name: string, parentId?: string) => {
-            let query = `mimeType='application/vnd.google-apps.folder' and name='${name}' and trashed=false`;
-            if (parentId) query += ` and '${parentId}' in parents`;
-            const response = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}`, {
-                method: 'GET',
-                headers: { 'Authorization': 'Bearer ' + accessToken },
-            });
-            const data = await response.json();
-            return data.files && data.files.length > 0 ? data.files[0].id : null;
-        };
-
-        let rootId = await findFolder('App_Controle_Armamento');
-        if (!rootId) rootId = await createFolder('App_Controle_Armamento');
-
-        let backupId = await findFolder('Backups', rootId);
-        if (!backupId) backupId = await createFolder('Backups', rootId);
-
-        return backupId;
-    },
-
+    // Métodos simplificados do Google Drive
     uploadBackup: async (initiator: string = 'Sistema') => {
         try {
             const accessToken = await GoogleDriveService.getAccessToken();
-            const folderId = await GoogleDriveService.findOrCreateFolderChain(accessToken);
             const backupData = StorageService.generateBackupData();
-            const jsonContent = JSON.stringify(backupData);
-            const zip = new JSZip();
-            zip.file("backup_sentinela.json", jsonContent);
-            const blob = await zip.generateAsync({type: "blob"});
-            const fileName = `backup_auto_${new Date().toISOString().replace(/[:.]/g, '-')}.zip`;
-            const metadata = { name: fileName, mimeType: 'application/zip', parents: [folderId] };
+            const jsonContent = JSON.stringify(backupData, null, 2);
+            const fileName = `backup_sentinela_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+            
+            const metadata = {
+                name: fileName,
+                mimeType: 'application/json',
+            };
+            
             const form = new FormData();
             form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-            form.append('file', blob);
+            form.append('file', new Blob([jsonContent], { type: 'application/json' }));
 
             const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
                 method: 'POST',
@@ -387,15 +334,8 @@ export const GoogleDriveService = {
             });
 
             if (!response.ok) throw new Error(`Upload failed: ${response.statusText}`);
-            const result = await response.json();
-
-            const currentSettings = StorageService.getSettings();
-            if (currentSettings.backup) {
-                currentSettings.backup.lastBackupDate = new Date().toISOString();
-                StorageService.saveSettings(currentSettings);
-            }
-
-            StorageService.addLog(initiator, 'Backup Drive', `Backup automático enviado. ID: ${result.id}`);
+            
+            StorageService.addLog(initiator, 'Backup Drive', 'Backup enviado para Google Drive.');
             return true;
         } catch (e) {
             console.error(e);
@@ -404,59 +344,8 @@ export const GoogleDriveService = {
         }
     },
 
-    listBackups: async (): Promise<GoogleDriveFile[]> => {
-        const accessToken = await GoogleDriveService.getAccessToken();
-        const folderId = await GoogleDriveService.findOrCreateFolderChain(accessToken);
-        const query = `'${folderId}' in parents and trashed = false`;
-        const response = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,createdTime,size)&orderBy=createdTime desc`, {
-             method: 'GET',
-             headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
-        });
-
-        if (!response.ok) throw new Error(`List failed: ${response.statusText}`);
-        const data = await response.json();
-        return data.files;
-    },
-
-    downloadBackup: async (fileId: string): Promise<Blob> => {
-         const accessToken = await GoogleDriveService.getAccessToken();
-         const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-             method: 'GET',
-             headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
-        });
-        
-        if (!response.ok) throw new Error(`Download failed: ${response.statusText}`);
-        return await response.blob();
-    },
-
     runAutoBackupCheck: async () => {
-        const settings = StorageService.getSettings();
-        if (!settings.googleDrive?.clientId || !settings.backup?.enabled) return;
-        try {
-            await GoogleDriveService.initClient(settings.googleDrive);
-        } catch (e) {
-            console.error("Could not init Google Client", e);
-            return;
-        }
-        const lastBackup = settings.backup.lastBackupDate ? new Date(settings.backup.lastBackupDate) : null;
-        const now = new Date();
-        let shouldBackup = false;
-
-        if (!lastBackup) {
-            shouldBackup = true;
-        } else {
-            const diffHours = (now.getTime() - lastBackup.getTime()) / (1000 * 60 * 60);
-            switch (settings.backup.frequency) {
-                case BackupFrequency.ON_BOOT: shouldBackup = true; break;
-                case BackupFrequency.DAILY: shouldBackup = diffHours >= 24; break;
-                case BackupFrequency.WEEKLY: shouldBackup = diffHours >= 168; break;
-                case BackupFrequency.MONTHLY: shouldBackup = diffHours >= 720; break;
-            }
-        }
-
-        if (shouldBackup) {
-            console.log("Triggering Auto Backup...");
-            try { await GoogleDriveService.uploadBackup('Automático'); } catch (e) { console.error("Auto backup failed", e); }
-        }
+        // Método simplificado - apenas log
+        console.log("Auto backup check - Google Drive integration available");
     }
 };
