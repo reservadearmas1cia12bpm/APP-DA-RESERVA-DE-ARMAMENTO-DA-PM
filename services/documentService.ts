@@ -1,7 +1,6 @@
 // =============================================
-//  documentService.ts (VERSÃO CORRIGIDA)
-//  Compatível com Vercel + Vite
-//  Exporta PDF e Word sem quebrar o build
+//  documentService.ts (VERSÃO VERCEL COMPATÍVEL)
+//  Sem dependências externas problemáticas
 // =============================================
 
 export default class DocumentService {
@@ -97,80 +96,53 @@ export default class DocumentService {
     }
 
     // -----------------------------------------
-    //  EXPORTAÇÃO PARA WORD — VERCEL COMPATÍVEL
+    //  EXPORTAÇÃO PARA WORD (SEM BIBLIOTECAS EXTERNAS)
     // -----------------------------------------
-    static async exportToWord(data: any) {
-        // Verificação mais robusta para SSR (Server-Side Rendering)
-        if (typeof window === "undefined" || !window.document) {
-            console.warn("exportToWord: Ambiente não suportado (SSR)");
-            return;
-        }
-
-        try {
-            // IMPORTAÇÃO DINÂMICA — NÃO QUEBRA O BUILD
-            const htmlDocx = await import("html-docx-js")
-                .then(module => module.default || module)
-                .catch(async () => {
-                    // Fallback para importação alternativa
-                    return await import("html-docx-js/dist/html-docx")
-                        .then(module => module.default || module);
-                });
-
-            if (!htmlDocx) {
-                throw new Error("Biblioteca html-docx-js não encontrada");
-            }
-
-            const html = this.buildHtml(data);
-            const blob = htmlDocx.asBlob(html, {
-                orientation: 'portrait',
-                margins: { top: 100, right: 100, bottom: 100, left: 100 }
-            });
-
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-
-            link.href = url;
-            link.download = `livro_alteracoes_${new Date().toISOString().split('T')[0]}.docx`;
-            link.style.display = "none";
-            
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            // Cleanup após download
-            setTimeout(() => URL.revokeObjectURL(url), 100);
-        } catch (error) {
-            console.error("Erro ao gerar Word:", error);
-            this.fallbackExportToWord(data);
-        }
-    }
-
-    // -----------------------------------------
-    //  FALLBACK PARA EXPORTAÇÃO WORD SIMPLES
-    // -----------------------------------------
-    private static fallbackExportToWord(data: any) {
+    static exportToWord(data: any) {
         if (typeof window === "undefined") return;
 
         try {
             const html = this.buildHtml(data);
-            const blob = new Blob([`
+            
+            // Formato HTML compatível com Word
+            const wordHTML = `
                 <html xmlns:o="urn:schemas-microsoft-com:office:office" 
                       xmlns:w="urn:schemas-microsoft-com:office:word" 
                       xmlns="http://www.w3.org/TR/REC-html40">
-                <head><meta charset="utf-8"><title>Document</title></head>
-                <body>${html}</body></html>
-            `], { type: 'application/msword' });
+                <head>
+                    <meta charset="utf-8">
+                    <title>Livro de Alterações</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; font-size: 12pt; margin: 30px; }
+                        h1 { text-align: center; font-weight: bold; margin-bottom: 30px; }
+                        .parte-titulo { text-align: center; font-weight: bold; margin-top: 20px; margin-bottom: 10px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; }
+                        table, tr, td, th { border: 1px solid black; padding: 4px; }
+                    </style>
+                </head>
+                <body>${html}</body>
+                </html>
+            `;
+
+            // Cria blob e faz download
+            const blob = new Blob([wordHTML], { 
+                type: 'application/msword' 
+            });
 
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             
             link.href = url;
             link.download = `livro_alteracoes_${new Date().toISOString().split('T')[0]}.doc`;
+            document.body.appendChild(link);
             link.click();
-            
+            document.body.removeChild(link);
+
+            // Cleanup
             setTimeout(() => URL.revokeObjectURL(url), 100);
+            
         } catch (error) {
-            console.error("Erro no fallback do Word:", error);
+            console.error("Erro ao gerar Word:", error);
         }
     }
 
@@ -178,11 +150,7 @@ export default class DocumentService {
     //  EXPORTAÇÃO PARA PDF (USANDO print())
     // -----------------------------------------
     static exportToPDF(data: any) {
-        // Verificação robusta para SSR
-        if (typeof window === "undefined" || !window.open) {
-            console.warn("exportToPDF: Ambiente não suportado (SSR)");
-            return;
-        }
+        if (typeof window === "undefined") return;
 
         try {
             const html = this.buildHtml(data);
@@ -195,16 +163,34 @@ export default class DocumentService {
                 // Aguarda o carregamento antes de imprimir
                 printWindow.onload = () => {
                     printWindow.print();
-                    // Fecha a janela após um tempo se o usuário não imprimir
-                    setTimeout(() => {
-                        if (!printWindow.closed) {
-                            printWindow.close();
-                        }
-                    }, 5000);
                 };
             }
         } catch (error) {
             console.error("Erro ao gerar PDF:", error);
+        }
+    }
+
+    // -----------------------------------------
+    //  EXPORTAÇÃO PARA HTML (ALTERNATIVA)
+    // -----------------------------------------
+    static exportToHTML(data: any) {
+        if (typeof window === "undefined") return;
+
+        try {
+            const html = this.buildHtml(data);
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            
+            link.href = url;
+            link.download = `livro_alteracoes_${new Date().toISOString().split('T')[0]}.html`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+        } catch (error) {
+            console.error("Erro ao gerar HTML:", error);
         }
     }
 }
