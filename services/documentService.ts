@@ -1,6 +1,6 @@
 // =============================================
-//  documentService.ts (VERSÃO VERCEL COMPATÍVEL)
-//  Sem dependências externas problemáticas
+//  documentService.ts (VERSÃO SUPER SIMPLIFICADA)
+//  Compatível com Vercel - Sem erros de build
 // =============================================
 
 export default class DocumentService {
@@ -9,188 +9,193 @@ export default class DocumentService {
     //  GERA O HTML COM A FORMATAÇÃO DO DOCUMENTO
     // -----------------------------------------
     static buildHtml(data: any): string {
+        const escalaTabela = data.escalaTabela || "";
+        const instrucao = data.instrucao || "Sem alterações.";
+        const materialBelico = data.materialBelico || "Sem alterações.";
+        const materialComunicacao = data.materialComunicacao || "Sem alterações.";
+        const materialBalistico = data.materialBalistico || "Sem alterações.";
+        const materialSinalizacao = data.materialSinalizacao || "Sem alterações.";
+        const materiaisDiversos = data.materiaisDiversos || "Sem alterações.";
+        const ocorrencias = data.ocorrencias || "Sem alterações a registrar.";
+        const passagem = data.passagem || "";
+        const dataStr = data.data || "";
+
         return `
-            <html>
-            <head>
-                <meta charset="UTF-8" />
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        font-size: 12pt;
-                        margin: 30px;
-                    }
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Livro de Alterações</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12pt;
+            margin: 30px;
+            line-height: 1.4;
+        }
+        h1 {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+        .parte-titulo {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 14pt;
+        }
+        p, div {
+            text-align: left;
+            margin: 8px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0 20px 0;
+        }
+        table, tr, td, th {
+            border: 1px solid black;
+            padding: 6px;
+        }
+        th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        .assinatura {
+            margin-top: 60px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>LIVRO DE ALTERAÇÕES</h1>
 
-                    h1 {
-                        text-align: center;
-                        font-weight: bold;
-                        margin-bottom: 30px;
-                    }
+    <div class="parte-titulo">I – PARTE: ESCALA DE SERVIÇO</div>
+    ${escalaTabela}
 
-                    .parte-titulo {
-                        text-align: center;
-                        font-weight: bold;
-                        margin-top: 20px;
-                        margin-bottom: 10px;
-                    }
+    <div class="parte-titulo">II – PARTE: INSTRUÇÃO</div>
+    <p>${instrucao}</p>
 
-                    p, div, table {
-                        text-align: left;
-                    }
+    <div class="parte-titulo">III – PARTE: ASSUNTOS GERAIS / ADMINISTRATIVOS</div>
 
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-top: 10px;
-                        margin-bottom: 20px;
-                    }
+    <h3>1) MATERIAL BÉLICO</h3>
+    <p>${materialBelico}</p>
 
-                    table, tr, td, th {
-                        border: 1px solid black;
-                        padding: 4px;
-                    }
-                </style>
-            </head>
+    <h3>2) MATERIAL DE COMUNICAÇÃO</h3>
+    <p>${materialComunicacao}</p>
 
-            <body>
-                <h1>LIVRO DE ALTERAÇÕES</h1>
+    <h3>3) MATERIAL DE PROTEÇÃO BALÍSTICA</h3>
+    <p>${materialBalistico}</p>
 
-                <div class="parte-titulo">I – PARTE: ESCALA DE SERVIÇO</div>
-                ${data.escalaTabela || ""}
+    <h3>4) MATERIAL DE SINALIZAÇÃO</h3>
+    <p>${materialSinalizacao}</p>
 
-                <div class="parte-titulo">II – PARTE: INSTRUÇÃO</div>
-                <p>${data.instrucao || "Sem alterações."}</p>
+    <h3>MATERIAIS DIVERSOS</h3>
+    <p>${materiaisDiversos}</p>
 
-                <div class="parte-titulo">III – PARTE: ASSUNTOS GERAIS / ADMINISTRATIVOS</div>
+    <div class="parte-titulo">IV – PARTE: OCORRÊNCIAS</div>
+    <p>${ocorrencias}</p>
 
-                <h3>1) MATERIAL BÉLICO</h3>
-                <p>${data.materialBelico || "Sem alterações."}</p>
+    <div class="parte-titulo">V – PARTE: PASSAGEM DE SERVIÇO</div>
+    <p>${passagem}</p>
+    
+    <p style="text-align:center; margin-top:40px;">
+        ${dataStr}
+    </p>
 
-                <h3>2) MATERIAL DE COMUNICAÇÃO</h3>
-                <p>${data.materialComunicacao || "Sem alterações."}</p>
-
-                <h3>3) MATERIAL DE PROTEÇÃO BALÍSTICA</h3>
-                <p>${data.materialBalistico || "Sem alterações."}</p>
-
-                <h3>4) MATERIAL DE SINALIZAÇÃO</h3>
-                <p>${data.materialSinalizacao || "Sem alterações."}</p>
-
-                <h3>MATERIAIS DIVERSOS</h3>
-                <p>${data.materiaisDiversos || "Sem alterações."}</p>
-
-                <div class="parte-titulo">IV – PARTE: OCORRÊNCIAS</div>
-                <p>${data.ocorrencias || "Sem alterações a registrar."}</p>
-
-                <div class="parte-titulo">V – PARTE: PASSAGEM DE SERVIÇO</div>
-                <p>${data.passagem || ""}</p>
-                <p style="text-align:center; margin-top:40px;">
-                    ${data.data || ""}
-                </p>
-
-                <div style="margin-top: 60px; text-align:center;">
-                    ___________________________________________<br/>
-                    ASSINATURA
-                </div>
-            </body>
-            </html>
-        `;
+    <div class="assinatura">
+        ___________________________________________<br/>
+        ASSINATURA
+    </div>
+</body>
+</html>`;
     }
 
     // -----------------------------------------
-    //  EXPORTAÇÃO PARA WORD (SEM BIBLIOTECAS EXTERNAS)
+    //  EXPORTAÇÃO PARA WORD (COMPATÍVEL VERCEL)
     // -----------------------------------------
-    static exportToWord(data: any) {
-        if (typeof window === "undefined") return;
+    static exportToWord(data: any): void {
+        // Verificação robusta para SSR
+        if (typeof window === 'undefined' || typeof document === 'undefined') {
+            return;
+        }
 
         try {
-            const html = this.buildHtml(data);
+            const htmlContent = this.buildHtml(data);
             
-            // Formato HTML compatível com Word
-            const wordHTML = `
-                <html xmlns:o="urn:schemas-microsoft-com:office:office" 
-                      xmlns:w="urn:schemas-microsoft-com:office:word" 
-                      xmlns="http://www.w3.org/TR/REC-html40">
-                <head>
-                    <meta charset="utf-8">
-                    <title>Livro de Alterações</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; font-size: 12pt; margin: 30px; }
-                        h1 { text-align: center; font-weight: bold; margin-bottom: 30px; }
-                        .parte-titulo { text-align: center; font-weight: bold; margin-top: 20px; margin-bottom: 10px; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; }
-                        table, tr, td, th { border: 1px solid black; padding: 4px; }
-                    </style>
-                </head>
-                <body>${html}</body>
-                </html>
-            `;
-
-            // Cria blob e faz download
-            const blob = new Blob([wordHTML], { 
-                type: 'application/msword' 
+            // Cria um blob com o conteúdo HTML formatado para Word
+            const blob = new Blob([htmlContent], {
+                type: 'application/msword'
             });
 
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            
+            // Cria URL para o blob
+            const url = window.URL.createObjectURL(blob);
+
+            // Cria link para download
+            const link = document.createElement('a');
             link.href = url;
-            link.download = `livro_alteracoes_${new Date().toISOString().split('T')[0]}.doc`;
+            link.download = `livro_alteracoes_${this.getCurrentDate()}.doc`;
+            
+            // Adiciona à página, clica e remove
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
 
-            // Cleanup
-            setTimeout(() => URL.revokeObjectURL(url), 100);
-            
+            // Limpa a URL após o download
+            setTimeout(() => {
+                window.URL.revokeObjectURL(url);
+            }, 100);
+
         } catch (error) {
-            console.error("Erro ao gerar Word:", error);
+            console.error('Erro na exportação para Word:', error);
         }
     }
 
     // -----------------------------------------
-    //  EXPORTAÇÃO PARA PDF (USANDO print())
+    //  EXPORTAÇÃO PARA PDF (COMPATÍVEL VERCEL)
     // -----------------------------------------
-    static exportToPDF(data: any) {
-        if (typeof window === "undefined") return;
+    static exportToPDF(data: any): void {
+        if (typeof window === 'undefined' || typeof document === 'undefined') {
+            return;
+        }
 
         try {
-            const html = this.buildHtml(data);
-            const printWindow = window.open("", "_blank");
-
-            if (printWindow) {
-                printWindow.document.write(html);
-                printWindow.document.close();
-                
-                // Aguarda o carregamento antes de imprimir
-                printWindow.onload = () => {
-                    printWindow.print();
-                };
+            const htmlContent = this.buildHtml(data);
+            
+            // Abre nova janela
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                alert('Permita pop-ups para gerar PDF');
+                return;
             }
+
+            // Escreve o conteúdo
+            printWindow.document.write(htmlContent);
+            printWindow.document.close();
+
+            // Espera o conteúdo carregar e imprime
+            printWindow.onload = () => {
+                printWindow.focus();
+                printWindow.print();
+                
+                // Fecha após imprimir (opcional)
+                // printWindow.close();
+            };
+
         } catch (error) {
-            console.error("Erro ao gerar PDF:", error);
+            console.error('Erro na exportação para PDF:', error);
         }
     }
 
     // -----------------------------------------
-    //  EXPORTAÇÃO PARA HTML (ALTERNATIVA)
+    //  MÉTODO AUXILIAR: DATA ATUAL
     // -----------------------------------------
-    static exportToHTML(data: any) {
-        if (typeof window === "undefined") return;
-
-        try {
-            const html = this.buildHtml(data);
-            const blob = new Blob([html], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            
-            link.href = url;
-            link.download = `livro_alteracoes_${new Date().toISOString().split('T')[0]}.html`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            setTimeout(() => URL.revokeObjectURL(url), 100);
-        } catch (error) {
-            console.error("Erro ao gerar HTML:", error);
-        }
+    private static getCurrentDate(): string {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
 }
