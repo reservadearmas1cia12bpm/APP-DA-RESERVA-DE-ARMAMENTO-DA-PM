@@ -100,25 +100,77 @@ export default class DocumentService {
     //  EXPORTAÇÃO PARA WORD — VERCEL COMPATÍVEL
     // -----------------------------------------
     static async exportToWord(data: any) {
-        if (typeof window === "undefined") return; // evita erro no SSR
+        // Verificação mais robusta para SSR (Server-Side Rendering)
+        if (typeof window === "undefined" || !window.document) {
+            console.warn("exportToWord: Ambiente não suportado (SSR)");
+            return;
+        }
 
         try {
             // IMPORTAÇÃO DINÂMICA — NÃO QUEBRA O BUILD
-            const htmlDocx = (await import("html-docx-js/dist/html-docx")).default;
+            const htmlDocx = await import("html-docx-js")
+                .then(module => module.default || module)
+                .catch(async () => {
+                    // Fallback para importação alternativa
+                    return await import("html-docx-js/dist/html-docx")
+                        .then(module => module.default || module);
+                });
+
+            if (!htmlDocx) {
+                throw new Error("Biblioteca html-docx-js não encontrada");
+            }
 
             const html = this.buildHtml(data);
-            const blob = htmlDocx.asBlob(html);
+            const blob = htmlDocx.asBlob(html, {
+                orientation: 'portrait',
+                margins: { top: 100, right: 100, bottom: 100, left: 100 }
+            });
 
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
 
             link.href = url;
-            link.download = "livro_de_alteracoes.docx";
+            link.download = `livro_alteracoes_${new Date().toISOString().split('T')[0]}.docx`;
+            link.style.display = "none";
+            
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
 
-            URL.revokeObjectURL(url);
+            // Cleanup após download
+            setTimeout(() => URL.revokeObjectURL(url), 100);
         } catch (error) {
             console.error("Erro ao gerar Word:", error);
+            this.fallbackExportToWord(data);
+        }
+    }
+
+    // -----------------------------------------
+    //  FALLBACK PARA EXPORTAÇÃO WORD SIMPLES
+    // -----------------------------------------
+    private static fallbackExportToWord(data: any) {
+        if (typeof window === "undefined") return;
+
+        try {
+            const html = this.buildHtml(data);
+            const blob = new Blob([`
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" 
+                      xmlns:w="urn:schemas-microsoft-com:office:word" 
+                      xmlns="http://www.w3.org/TR/REC-html40">
+                <head><meta charset="utf-8"><title>Document</title></head>
+                <body>${html}</body></html>
+            `], { type: 'application/msword' });
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            
+            link.href = url;
+            link.download = `livro_alteracoes_${new Date().toISOString().split('T')[0]}.doc`;
+            link.click();
+            
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+        } catch (error) {
+            console.error("Erro no fallback do Word:", error);
         }
     }
 
@@ -126,15 +178,33 @@ export default class DocumentService {
     //  EXPORTAÇÃO PARA PDF (USANDO print())
     // -----------------------------------------
     static exportToPDF(data: any) {
-        if (typeof window === "undefined") return;
+        // Verificação robusta para SSR
+        if (typeof window === "undefined" || !window.open) {
+            console.warn("exportToPDF: Ambiente não suportado (SSR)");
+            return;
+        }
 
-        const html = this.buildHtml(data);
-        const printWindow = window.open("", "_blank");
+        try {
+            const html = this.buildHtml(data);
+            const printWindow = window.open("", "_blank");
 
-        if (printWindow) {
-            printWindow.document.write(html);
-            printWindow.document.close();
-            printWindow.print();
+            if (printWindow) {
+                printWindow.document.write(html);
+                printWindow.document.close();
+                
+                // Aguarda o carregamento antes de imprimir
+                printWindow.onload = () => {
+                    printWindow.print();
+                    // Fecha a janela após um tempo se o usuário não imprimir
+                    setTimeout(() => {
+                        if (!printWindow.closed) {
+                            printWindow.close();
+                        }
+                    }, 5000);
+                };
+            }
+        } catch (error) {
+            console.error("Erro ao gerar PDF:", error);
         }
     }
 }
