@@ -1,26 +1,24 @@
+// services/storageService.ts - VERSÃO MÍNIMA
 import { Material, Personnel, Cautela, SystemLog, AppSettings, DailyPart } from '../types';
 
 const KEYS = {
   MATERIALS: 'sentinela_materials',
-  PERSONNEL: 'sentinela_personnel',
+  PERSONNEL: 'sentinela_personnel', 
   CAUTELAS: 'sentinela_cautelas',
   LOGS: 'sentinela_logs',
   SETTINGS: 'sentinela_settings',
   DAILY_PARTS: 'sentinela_daily_parts'
 };
 
-// Generic Getter
 const get = <T>(key: string, defaultValue: T): T => {
   try {
     const item = localStorage.getItem(key);
     return item ? JSON.parse(item) : defaultValue;
   } catch (e) {
-    console.error(`Error reading ${key}`, e);
     return defaultValue;
   }
 };
 
-// Generic Setter
 const set = <T>(key: string, value: T): void => {
   try {
     localStorage.setItem(key, JSON.stringify(value));
@@ -51,18 +49,15 @@ export const StorageService = {
 
   getDailyParts: () => get<DailyPart[]>(KEYS.DAILY_PARTS, []),
   saveDailyPart: (part: DailyPart) => {
-      const parts = StorageService.getDailyParts();
-      const index = parts.findIndex(p => p.id === part.id);
-      if (index >= 0) {
-          parts[index] = part;
-      } else {
-          parts.unshift(part);
-      }
-      set(KEYS.DAILY_PARTS, parts);
+    const parts = get<DailyPart[]>(KEYS.DAILY_PARTS, []);
+    const index = parts.findIndex(p => p.id === part.id);
+    if (index >= 0) parts[index] = part;
+    else parts.unshift(part);
+    set(KEYS.DAILY_PARTS, parts);
   },
 
   addLog: (armorerName: string, action: string, details: string) => {
-    const logs = StorageService.getLogs();
+    const logs = get<SystemLog[]>(KEYS.LOGS, []);
     const newLog: SystemLog = {
       id: Date.now().toString(),
       armorerName,
@@ -70,125 +65,54 @@ export const StorageService = {
       details,
       timestamp: new Date().toISOString()
     };
-    StorageService.saveLogs([newLog, ...logs]);
+    set(KEYS.LOGS, [newLog, ...logs]);
   },
 
-  // SIMPLE BACKUP - NO ZIP
-  createBackup: (initiator: string = 'Sistema') => {
+  // BACKUP SIMPLIFICADO - SEM ZIP
+  createBackup: () => {
     const backupData = {
-      materials: StorageService.getMaterials(),
-      personnel: StorageService.getPersonnel(),
-      cautelas: StorageService.getCautelas(),
-      logs: StorageService.getLogs(),
-      settings: StorageService.getSettings(),
-      dailyParts: StorageService.getDailyParts(),
-      timestamp: new Date().toISOString(),
-      version: '1.3'
+      materials: get<Material[]>(KEYS.MATERIALS, []),
+      personnel: get<Personnel[]>(KEYS.PERSONNEL, []),
+      cautelas: get<Cautela[]>(KEYS.CAUTELAS, []),
+      logs: get<SystemLog[]>(KEYS.LOGS, []),
+      settings: get<AppSettings>(KEYS.SETTINGS, {}),
+      dailyParts: get<DailyPart[]>(KEYS.DAILY_PARTS, []),
+      timestamp: new Date().toISOString()
     };
     
-    const jsonContent = JSON.stringify(backupData, null, 2);
-    const fileName = `backup_sentinela_${new Date().toISOString().split('T')[0]}.json`;
-    
-    const blob = new Blob([jsonContent], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", url);
-    downloadAnchorNode.setAttribute("download", fileName);
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-    URL.revokeObjectURL(url);
-
-    StorageService.addLog(initiator, 'Backup Local', 'Backup criado com sucesso');
-    return true;
-  },
-
-  // SIMPLE RESTORE
-  restoreBackup: (file: File, callback: (success: boolean, message?: string) => void, initiator: string = 'Sistema') => {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        if (!event.target?.result) {
-          callback(false, "Falha na leitura do arquivo.");
-          return;
-        }
-
-        const json = JSON.parse(event.target.result as string);
-        
-        if (!json.materials || !json.settings) {
-          callback(false, "Arquivo inválido ou corrompido.");
-          return;
-        }
-
-        StorageService.saveMaterials(json.materials);
-        StorageService.savePersonnel(json.personnel || []);
-        StorageService.saveCautelas(json.cautelas || []);
-        StorageService.saveLogs(json.logs || []);
-        StorageService.saveSettings(json.settings);
-        if (json.dailyParts) set(KEYS.DAILY_PARTS, json.dailyParts);
-        
-        StorageService.addLog(initiator, 'Restauração', 'Sistema restaurado com sucesso');
-        callback(true, "Dados restaurados com sucesso.");
-      } catch (e) {
-        console.error(e);
-        callback(false, "Erro ao processar arquivo.");
-      }
-    };
-    reader.readAsText(file);
-  },
-
-  // SIMPLE CSV EXPORT
-  createExcelBackup: (initiator: string = 'Sistema') => {
-    const dateStr = new Date().toISOString().split('T')[0];
-    
-    // Materials CSV
-    const materials = StorageService.getMaterials();
-    const matHeaders = ['Categoria', 'Tipo', 'Modelo', 'Serial', 'Status'];
-    const matRows = materials.map(m => [m.category, m.type, m.model, m.serialNumber, m.status]);
-    const matCSV = [matHeaders.join(';'), ...matRows.map(r => r.join(';'))].join('\n');
-    
-    // Personnel CSV  
-    const personnel = StorageService.getPersonnel();
-    const perHeaders = ['Nome', 'Posto', 'Matrícula', 'Unidade'];
-    const perRows = personnel.map(p => [p.name, p.rank, p.matricula, p.unit]);
-    const perCSV = [perHeaders.join(';'), ...perRows.map(r => r.join(';'))].join('\n');
-    
-    const combinedCSV = `MATERIAIS\n${matCSV}\n\nEFETIVO\n${perCSV}`;
-    
-    const blob = new Blob([combinedCSV], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([JSON.stringify(backupData)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `sentinela_export_${dateStr}.csv`;
-    document.body.appendChild(a);
+    a.download = `backup_${new Date().toISOString().split('T')[0]}.json`;
     a.click();
-    a.remove();
     URL.revokeObjectURL(url);
-    
-    StorageService.addLog(initiator, 'Exportação CSV', 'Dados exportados para CSV');
-    return true;
   },
 
-  // Legacy method for compatibility
-  exportCSV: (data: any[], filename: string) => {
-    console.log('Export CSV:', filename);
+  // RESTORE SIMPLIFICADO
+  restoreBackup: (file: File, callback: (success: boolean, message?: string) => void) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
+        if (data.materials) set(KEYS.MATERIALS, data.materials);
+        if (data.personnel) set(KEYS.PERSONNEL, data.personnel);
+        if (data.cautelas) set(KEYS.CAUTELAS, data.cautelas);
+        if (data.logs) set(KEYS.LOGS, data.logs);
+        if (data.settings) set(KEYS.SETTINGS, data.settings);
+        if (data.dailyParts) set(KEYS.DAILY_PARTS, data.dailyParts);
+        callback(true, 'Backup restaurado!');
+      } catch (error) {
+        callback(false, 'Erro ao restaurar backup');
+      }
+    };
+    reader.readAsText(file);
   }
 };
 
-// SIMPLE Google Drive Service (placeholder)
+// SERVIÇO SIMPLES DO GOOGLE DRIVE
 export const GoogleDriveService = {
-  initClient: async () => {
-    console.log('Google Drive init - not implemented');
-    return true;
-  },
-  
-  uploadBackup: async () => {
-    console.log('Google Drive upload - not implemented');
-    return true;
-  },
-  
-  runAutoBackupCheck: async () => {
-    console.log('Auto backup check - Google Drive not available');
-  }
+  initClient: async () => true,
+  uploadBackup: async () => true, 
+  runAutoBackupCheck: async () => console.log('Google Drive não disponível')
 };
