@@ -7,10 +7,7 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
     rollupOptions: {
-      external: ['jszip'] // Garante que nenhum jszip seja incluído
+      external: ['jszip', 'pdfmake'] // BLOQUEIA bibliotecas problemáticas
     }
-  },
-  define: {
-    'process.env': {}
   }
 });
