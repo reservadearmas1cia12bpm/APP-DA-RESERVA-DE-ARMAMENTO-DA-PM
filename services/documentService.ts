@@ -1,9 +1,9 @@
 // =============================================
-//  documentService.ts (VERSÃO SUPER SIMPLIFICADA)
-//  Compatível com Vercel - Sem erros de build
+//  documentService.ts (VERSÃO CORRIGIDA)
+//  Compatível com Vercel - Sem erros
 // =============================================
 
-export default class DocumentService {
+export class DocumentService {
 
     // -----------------------------------------
     //  GERA O HTML COM A FORMATAÇÃO DO DOCUMENTO
@@ -116,7 +116,6 @@ export default class DocumentService {
     //  EXPORTAÇÃO PARA WORD (COMPATÍVEL VERCEL)
     // -----------------------------------------
     static exportToWord(data: any): void {
-        // Verificação robusta para SSR
         if (typeof window === 'undefined' || typeof document === 'undefined') {
             return;
         }
@@ -124,25 +123,19 @@ export default class DocumentService {
         try {
             const htmlContent = this.buildHtml(data);
             
-            // Cria um blob com o conteúdo HTML formatado para Word
             const blob = new Blob([htmlContent], {
                 type: 'application/msword'
             });
 
-            // Cria URL para o blob
             const url = window.URL.createObjectURL(blob);
-
-            // Cria link para download
             const link = document.createElement('a');
             link.href = url;
             link.download = `livro_alteracoes_${this.getCurrentDate()}.doc`;
             
-            // Adiciona à página, clica e remove
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
 
-            // Limpa a URL após o download
             setTimeout(() => {
                 window.URL.revokeObjectURL(url);
             }, 100);
@@ -162,30 +155,34 @@ export default class DocumentService {
 
         try {
             const htmlContent = this.buildHtml(data);
-            
-            // Abre nova janela
             const printWindow = window.open('', '_blank');
             if (!printWindow) {
                 alert('Permita pop-ups para gerar PDF');
                 return;
             }
 
-            // Escreve o conteúdo
             printWindow.document.write(htmlContent);
             printWindow.document.close();
 
-            // Espera o conteúdo carregar e imprime
             printWindow.onload = () => {
                 printWindow.focus();
                 printWindow.print();
-                
-                // Fecha após imprimir (opcional)
-                // printWindow.close();
             };
 
         } catch (error) {
             console.error('Erro na exportação para PDF:', error);
         }
+    }
+
+    // -----------------------------------------
+    //  MÉTODOS PARA DAILY BOOK (COMPATIBILIDADE)
+    // -----------------------------------------
+    static generateWord(data: any): void {
+        this.exportToWord(data);
+    }
+
+    static generatePDF(data: any): void {
+        this.exportToPDF(data);
     }
 
     // -----------------------------------------
@@ -199,3 +196,6 @@ export default class DocumentService {
         return `${year}-${month}-${day}`;
     }
 }
+
+// Exportação padrão para compatibilidade
+export default DocumentService;
