@@ -1,6 +1,6 @@
 // =============================================
 //  documentService.ts (VERSÃO CORRIGIDA)
-//  Compatível com DailyBook.tsx
+//  Assinatura Centralizada
 // =============================================
 
 export class DocumentService {
@@ -75,17 +75,6 @@ export class DocumentService {
         .header-table {
             margin-bottom: 20px;
         }
-        .assinatura-centralizada {
-            margin-top: 80px;
-            text-align: center;
-        }
-        .linha-assinatura {
-            border-top: 1px solid black;
-            width: 250px;
-            margin: 0 auto;
-            padding-top: 15px;
-            margin-bottom: 8px;
-        }
     </style>
 </head>
 <body>
@@ -145,14 +134,14 @@ export class DocumentService {
         A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
     </p>
 
-    <!-- ASSINATURA CENTRALIZADA -->
-    <div class="assinatura-centralizada">
-        <div style="font-weight: bold; margin-bottom: 10px; font-size: 11pt;">
+    <!-- ASSINATURA PERFEITAMENTE CENTRALIZADA -->
+    <div style="margin-top: 100px; text-align: center; width: 100%;">
+        <div style="font-weight: bold; margin-bottom: 20px; font-size: 12pt;">
             ${part5.city || 'FORTALEZA'}, ${part5.date ? new Date(part5.date).toLocaleDateString('pt-BR') : '__/__/____'}
         </div>
-        <div class="linha-assinatura"></div>
-        <div style="font-weight: bold; font-size: 11pt; margin-bottom: 2px;">${data.authorName || 'WILL ROBSON ALMERINDO SIQUEIRA'}</div>
-        <div style="font-size: 10pt;">MAT: ${data.authorId || '30671015'}</div>
+        <div style="border-top: 1px solid black; width: 300px; margin: 0 auto; padding-top: 20px; margin-bottom: 10px;"></div>
+        <div style="font-weight: bold; font-size: 12pt; margin-bottom: 5px;">${data.authorName || 'WILL ROBSON ALMERINDO SIQUEIRA'}</div>
+        <div style="font-size: 11pt;">MAT: ${data.authorId || '30671015'}</div>
     </div>
 </body>
 </html>`;
