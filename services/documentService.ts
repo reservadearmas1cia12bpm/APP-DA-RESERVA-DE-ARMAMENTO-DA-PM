@@ -1,6 +1,6 @@
 // =============================================
 //  documentService.ts (VERSÃO CORRIGIDA)
-//  Compatível com Vercel - Sem erros
+//  Compatível com DailyBook.tsx
 // =============================================
 
 export class DocumentService {
@@ -9,16 +9,24 @@ export class DocumentService {
     //  GERA O HTML COM A FORMATAÇÃO DO DOCUMENTO
     // -----------------------------------------
     static buildHtml(data: any): string {
-        const escalaTabela = data.escalaTabela || "";
-        const instrucao = data.instrucao || "Sem alterações.";
-        const materialBelico = data.materialBelico || "Sem alterações.";
-        const materialComunicacao = data.materialComunicacao || "Sem alterações.";
-        const materialBalistico = data.materialBalistico || "Sem alterações.";
-        const materialSinalizacao = data.materialSinalizacao || "Sem alterações.";
-        const materiaisDiversos = data.materiaisDiversos || "Sem alterações.";
-        const ocorrencias = data.ocorrencias || "Sem alterações a registrar.";
-        const passagem = data.passagem || "";
-        const dataStr = data.data || "";
+        // Extrai os dados do formato do DailyBook
+        const header = data.content?.header || {};
+        const intro = data.content?.intro || {};
+        const part1 = data.content?.part1 || [];
+        const part2 = data.content?.part2 || "Sem alterações.";
+        const part3 = data.content?.part3 || "";
+        const part4 = data.content?.part4 || "Sem alterações a registrar.";
+        const part5 = data.content?.part5 || {};
+
+        // Formata a data de visto
+        const dateVisto = header.dateVisto ? new Date(header.dateVisto).toLocaleDateString('pt-BR') : '___/___/_____';
+        
+        // Formata as datas de início e fim
+        const dateStart = intro.dateStart ? new Date(intro.dateStart).toLocaleDateString('pt-BR') : '___/___/_____';
+        const dateEnd = intro.dateEnd ? new Date(intro.dateEnd).toLocaleDateString('pt-BR') : '___/___/_____';
+
+        // Gera a tabela da escala de serviço
+        const escalaTabela = this.generateScheduleTable(part1);
 
         return `
 <!DOCTYPE html>
@@ -28,10 +36,10 @@ export class DocumentService {
     <title>Livro de Alterações</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: "Times New Roman", Times, serif;
             font-size: 12pt;
-            margin: 30px;
-            line-height: 1.4;
+            margin: 20mm;
+            line-height: 1.5;
         }
         h1 {
             text-align: center;
@@ -43,7 +51,8 @@ export class DocumentService {
             font-weight: bold;
             margin-top: 20px;
             margin-bottom: 10px;
-            font-size: 14pt;
+            font-size: 12pt;
+            text-decoration: underline;
         }
         p, div {
             text-align: left;
@@ -56,60 +65,142 @@ export class DocumentService {
         }
         table, tr, td, th {
             border: 1px solid black;
-            padding: 6px;
+            padding: 4px;
+            font-size: 11pt;
         }
         th {
             background-color: #f0f0f0;
             font-weight: bold;
         }
+        .header-table {
+            margin-bottom: 20px;
+        }
         .assinatura {
-            margin-top: 60px;
+            margin-top: 40px;
             text-align: center;
+        }
+        .signature-line {
+            border-top: 1px solid black;
+            width: 200px;
+            margin: 0 auto;
+            padding-top: 5px;
         }
     </style>
 </head>
 <body>
     <h1>LIVRO DE ALTERAÇÕES</h1>
 
+    <!-- CABEÇALHO -->
+    <table class="header-table">
+        <tr>
+            <td style="width: 30%; border: 1px solid black; padding: 8px; text-align: center; vertical-align: top;">
+                <div style="font-weight: bold; font-size: 10pt;">VISTO POR ALTERAÇÃO</div>
+                <div style="margin: 10px 0; font-size: 11pt;">${dateVisto}</div>
+                <div style="font-weight: bold; margin-top: 15px;">${header.fiscal || 'NOME FISCAL'}</div>
+                <div style="font-weight: bold; font-size: 10pt;">RESPONSÁVEL</div>
+            </td>
+            <td style="width: 70%; border: 1px solid black; padding: 8px; text-align: center; vertical-align: middle;">
+                <div style="font-weight: bold; font-size: 12pt;">POLÍCIA MILITAR DO CEARÁ</div>
+                <div style="margin: 5px 0; font-size: 10pt; font-weight: bold;">
+                    CRPM <strong>${header.crpm || '___'}</strong> 
+                    BPM <strong>${header.bpm || '___'}</strong> 
+                    <strong>${header.city || 'CAUCAIA'}</strong>
+                </div>
+                <div style="font-weight: bold; text-decoration: underline; margin-top: 10px; font-size: 12pt;">
+                    RESERVA DE ARMAMENTO
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- INTRODUÇÃO -->
+    <p style="text-align: left; margin-bottom: 20px;">
+        Parte diária do armeiro do <strong>${intro.bpm || '___'}</strong> batalhão 
+        do dia <strong>${dateStart}</strong> para o dia <strong>${dateEnd}</strong>, 
+        ao Senhor Fiscal Administrativo.
+    </p>
+
+    <!-- I – PARTE: ESCALA DE SERVIÇO -->
     <div class="parte-titulo">I – PARTE: ESCALA DE SERVIÇO</div>
     ${escalaTabela}
 
+    <!-- II – PARTE: INSTRUÇÃO -->
     <div class="parte-titulo">II – PARTE: INSTRUÇÃO</div>
-    <p>${instrucao}</p>
+    <p>${part2}</p>
 
-    <div class="parte-titulo">III – PARTE: ASSUNTOS GERAIS / ADMINISTRATIVOS</div>
+    <!-- III – PARTE: ASSUNTOS GERAIS/ADMINISTRATIVOS -->
+    <div class="parte-titulo">III – PARTE: ASSUNTOS GERAIS/ADMINISTRATIVOS</div>
+    <div style="white-space: pre-line; font-size: 11pt;">${part3}</div>
 
-    <h3>1) MATERIAL BÉLICO</h3>
-    <p>${materialBelico}</p>
-
-    <h3>2) MATERIAL DE COMUNICAÇÃO</h3>
-    <p>${materialComunicacao}</p>
-
-    <h3>3) MATERIAL DE PROTEÇÃO BALÍSTICA</h3>
-    <p>${materialBalistico}</p>
-
-    <h3>4) MATERIAL DE SINALIZAÇÃO</h3>
-    <p>${materialSinalizacao}</p>
-
-    <h3>MATERIAIS DIVERSOS</h3>
-    <p>${materiaisDiversos}</p>
-
+    <!-- IV – PARTE: OCORRÊNCIAS -->
     <div class="parte-titulo">IV – PARTE: OCORRÊNCIAS</div>
-    <p>${ocorrencias}</p>
+    <p>Comunico-vos que:</p>
+    <p>${part4}</p>
 
+    <!-- V – PARTE: PASSAGEM DE SERVIÇO -->
     <div class="parte-titulo">V – PARTE: PASSAGEM DE SERVIÇO</div>
-    <p>${passagem}</p>
-    
-    <p style="text-align:center; margin-top:40px;">
-        ${dataStr}
+    <p style="margin-bottom: 30px;">
+        FI-LA AO MEU SUBSTITUTO LEGAL, O <strong>${part5.substitute || 'GRADUAÇÃO / NOME'}</strong>, 
+        A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
     </p>
+    
+    <div style="text-align: center; margin-bottom: 40px; font-weight: bold;">
+        ${part5.city || 'CAUCAIA'}, ${part5.date ? new Date(part5.date).toLocaleDateString('pt-BR') : '__/__/____'}
+    </div>
 
+    <!-- ASSINATURA -->
     <div class="assinatura">
-        ___________________________________________<br/>
-        ASSINATURA
+        <div class="signature-line"></div>
+        <div style="margin-top: 5px; font-weight: bold;">${data.authorName || 'NOME DO ARMEIRO'}</div>
+        <div style="font-size: 10pt;">MAT: ${data.authorId || '000000'}</div>
     </div>
 </body>
 </html>`;
+    }
+
+    // -----------------------------------------
+    //  GERA A TABELA DA ESCALA DE SERVIÇO
+    // -----------------------------------------
+    private static generateScheduleTable(schedule: any[]): string {
+        if (!schedule || schedule.length === 0) {
+            return '<p>Nenhuma escala definida.</p>';
+        }
+
+        let tableHtml = `
+        <table>
+            <thead>
+                <tr>
+                    <th colspan="2">Nº</th>
+                    <th>NOME</th>
+                    <th>FUNÇÃO</th>
+                    <th>HORÁRIO</th>
+                </tr>
+                <tr>
+                    <th>GRAD</th>
+                    <th>Nº</th>
+                    <th>NOME</th>
+                    <th>FUNÇÃO</th>
+                    <th>HORÁRIO</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        schedule.forEach((row, index) => {
+            tableHtml += `
+                <tr>
+                    <td>${row.grad || '-'}</td>
+                    <td>${row.num || ''}</td>
+                    <td>${row.name || ''}</td>
+                    <td>${row.func || ''}</td>
+                    <td>${row.horario || ''}</td>
+                </tr>`;
+        });
+
+        tableHtml += `
+            </tbody>
+        </table>`;
+
+        return tableHtml;
     }
 
     // -----------------------------------------
@@ -117,6 +208,7 @@ export class DocumentService {
     // -----------------------------------------
     static exportToWord(data: any): void {
         if (typeof window === 'undefined' || typeof document === 'undefined') {
+            console.warn('Ambiente não suportado para exportação');
             return;
         }
 
@@ -142,6 +234,7 @@ export class DocumentService {
 
         } catch (error) {
             console.error('Erro na exportação para Word:', error);
+            alert('Erro ao exportar para Word. Verifique o console para detalhes.');
         }
     }
 
@@ -150,6 +243,7 @@ export class DocumentService {
     // -----------------------------------------
     static exportToPDF(data: any): void {
         if (typeof window === 'undefined' || typeof document === 'undefined') {
+            console.warn('Ambiente não suportado para exportação');
             return;
         }
 
@@ -171,6 +265,7 @@ export class DocumentService {
 
         } catch (error) {
             console.error('Erro na exportação para PDF:', error);
+            alert('Erro ao exportar para PDF. Verifique o console para detalhes.');
         }
     }
 
