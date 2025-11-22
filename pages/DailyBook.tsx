@@ -15,6 +15,7 @@ interface DailyBookProps {
 export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, armorer, institutionName }) => {
   const [mode, setMode] = useState<'LIST' | 'EDITOR'>('LIST');
   const [history, setHistory] = useState<DailyPart[]>([]);
+  const [showScheduleEditor, setShowScheduleEditor] = useState(false);
   
   // Editor State
   const [currentPartId, setCurrentPartId] = useState<string | null>(null);
@@ -103,10 +104,16 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
     setIntroDateStart(today.toISOString().split('T')[0]);
     setIntroDateEnd(tomorrow.toISOString().split('T')[0]);
     setSignDate(today.toISOString().split('T')[0]);
-    setSchedule([{ grad: armorer?.rank || '-', num: armorer?.numeral || armorer?.matricula || '', name: armorer?.warName || armorer?.name || '', func: 'Armeiro', horario: '07h-07h' }]);
+    setSchedule([
+      { grad: armorer?.rank || '-', num: armorer?.numeral || armorer?.matricula || '', name: armorer?.warName || armorer?.name || '', func: 'Armeiro', horario: '07h-07h' },
+      { grad: '', num: '', name: '', func: 'Auxiliar', horario: '07h-19h' },
+      { grad: '', num: '', name: '', func: '', horario: '' },
+      { grad: '', num: '', name: '', func: '', horario: '' }
+    ]);
     setPart2Text('Sem alterações.'); setPart4Text('Sem alterações a registrar.');
     generateInventoryText();
     setSubstituteName(''); setSignature(null);
+    setShowScheduleEditor(false);
     setMode('EDITOR');
   };
 
@@ -229,24 +236,213 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
 
                   <div className="text-left mb-6">Parte diária do armeiro do <span className="font-bold uppercase">{bpm || '___'}</span> batalhão do dia <input type="date" className="mx-2 w-32 border-b border-black outline-none text-center" value={introDateStart} onChange={e => setIntroDateStart(e.target.value)}/> para o dia <input type="date" className="mx-2 w-32 border-b border-black outline-none text-center" value={introDateEnd} onChange={e => setIntroDateEnd(e.target.value)}/>, ao Senhor Fiscal Administrativo.</div>
 
-                  <div className="mb-6"><div className="text-center font-bold mb-2 uppercase">I – PARTE: ESCALA DE SERVIÇO</div>
-                      <table className="w-full border-collapse border border-black text-center text-sm"><thead><tr><th className="border border-black bg-gray-100 p-1">GRAD</th><th className="border border-black bg-gray-100 p-1">Nº</th><th className="border border-black bg-gray-100 p-1 w-[40%]">NOME</th><th className="border border-black bg-gray-100 p-1">FUNÇÃO</th><th className="border border-black bg-gray-100 p-1">HORÁRIO</th><th className="border border-black bg-gray-100 p-1 w-8"></th></tr></thead>
-                      <tbody>{schedule.map((row, idx) => (<tr key={idx}><td className="border border-black p-0"><input className="w-full text-center p-1 outline-none font-serif" value={row.grad} onChange={e => {const n=[...schedule];n[idx].grad=e.target.value;setSchedule(n)}}/></td><td className="border border-black p-0"><input className="w-full text-center p-1 outline-none font-serif" value={row.num} onChange={e => {const n=[...schedule];n[idx].num=e.target.value;setSchedule(n)}}/></td><td className="border border-black p-0"><input className="w-full text-center p-1 outline-none font-serif" value={row.name} onChange={e => {const n=[...schedule];n[idx].name=e.target.value;setSchedule(n)}}/></td><td className="border border-black p-0"><input className="w-full text-center p-1 outline-none font-serif" value={row.func} onChange={e => {const n=[...schedule];n[idx].func=e.target.value;setSchedule(n)}}/></td><td className="border border-black p-0"><input className="w-full text-center p-1 outline-none font-serif" value={row.horario} onChange={e => {const n=[...schedule];n[idx].horario=e.target.value;setSchedule(n)}}/></td><td className="border border-black p-0 text-center"><button onClick={() => {const n=[...schedule];n.splice(idx,1);setSchedule(n)}} className="text-red-500 hover:bg-red-50 p-1"><Trash2 size={14}/></button></td></tr>))}</tbody></table>
-                      <button onClick={() => setSchedule([...schedule, {grad:'',num:'',name:'',func:'',horario:''}])} className="text-xs text-blue-600 flex items-center gap-1 mt-1"><Plus size={12}/> Adicionar Linha</button>
+                  {/* ESCALA DE SERVIÇO - VERSÃO CORRIGIDA */}
+                  <div className="mb-6">
+                    <div className="text-center font-bold mb-2 uppercase">I – PARTE: ESCALA DE SERVIÇO</div>
+                    
+                    <button 
+                      onClick={() => setShowScheduleEditor(!showScheduleEditor)}
+                      className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded mb-2 flex items-center gap-1"
+                    >
+                      <Edit3 size={12}/> {showScheduleEditor ? 'Visualizar' : 'Editar'} Escala
+                    </button>
+
+                    {showScheduleEditor ? (
+                      // Tabela editável
+                      <table className="w-full border-collapse border border-black text-center text-sm">
+                        <thead>
+                          <tr>
+                            <th className="border border-black bg-gray-100 p-1">GRAD</th>
+                            <th className="border border-black bg-gray-100 p-1">Nº</th>
+                            <th className="border border-black bg-gray-100 p-1 w-[40%]">NOME</th>
+                            <th className="border border-black bg-gray-100 p-1">FUNÇÃO</th>
+                            <th className="border border-black bg-gray-100 p-1">HORÁRIO</th>
+                            <th className="border border-black bg-gray-100 p-1 w-8">Ação</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {schedule.map((row, idx) => (
+                            <tr key={idx}>
+                              <td className="border border-black p-0">
+                                <input 
+                                  className="w-full text-center p-1 outline-none font-serif" 
+                                  value={row.grad} 
+                                  onChange={e => {
+                                    const n = [...schedule];
+                                    n[idx].grad = e.target.value;
+                                    setSchedule(n);
+                                  }}
+                                />
+                              </td>
+                              <td className="border border-black p-0">
+                                <input 
+                                  className="w-full text-center p-1 outline-none font-serif" 
+                                  value={row.num} 
+                                  onChange={e => {
+                                    const n = [...schedule];
+                                    n[idx].num = e.target.value;
+                                    setSchedule(n);
+                                  }}
+                                />
+                              </td>
+                              <td className="border border-black p-0">
+                                <input 
+                                  className="w-full text-center p-1 outline-none font-serif" 
+                                  value={row.name} 
+                                  onChange={e => {
+                                    const n = [...schedule];
+                                    n[idx].name = e.target.value;
+                                    setSchedule(n);
+                                  }}
+                                />
+                              </td>
+                              <td className="border border-black p-0">
+                                <input 
+                                  className="w-full text-center p-1 outline-none font-serif" 
+                                  value={row.func} 
+                                  onChange={e => {
+                                    const n = [...schedule];
+                                    n[idx].func = e.target.value;
+                                    setSchedule(n);
+                                  }}
+                                />
+                              </td>
+                              <td className="border border-black p-0">
+                                <input 
+                                  className="w-full text-center p-1 outline-none font-serif" 
+                                  value={row.horario} 
+                                  onChange={e => {
+                                    const n = [...schedule];
+                                    n[idx].horario = e.target.value;
+                                    setSchedule(n);
+                                  }}
+                                />
+                              </td>
+                              <td className="border border-black p-0 text-center">
+                                <button 
+                                  onClick={() => {
+                                    const n = [...schedule];
+                                    n.splice(idx, 1);
+                                    setSchedule(n);
+                                  }} 
+                                  className="text-red-500 hover:bg-red-50 p-1"
+                                >
+                                  <Trash2 size={14}/>
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      // Tabela para visualização/exportação
+                      <table className="w-full border-collapse border border-black text-center text-sm">
+                        <thead>
+                          <tr>
+                            <th className="border border-black bg-gray-100 p-1">GRAD</th>
+                            <th className="border border-black bg-gray-100 p-1">Nº</th>
+                            <th className="border border-black bg-gray-100 p-1 w-[40%]">NOME</th>
+                            <th className="border border-black bg-gray-100 p-1">FUNÇÃO</th>
+                            <th className="border border-black bg-gray-100 p-1">HORÁRIO</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {schedule.map((row, idx) => (
+                            <tr key={idx}>
+                              <td className="border border-black p-1 font-serif">{row.grad || '-'}</td>
+                              <td className="border border-black p-1 font-serif">{row.num || ''}</td>
+                              <td className="border border-black p-1 font-serif">{row.name || ''}</td>
+                              <td className="border border-black p-1 font-serif">{row.func || ''}</td>
+                              <td className="border border-black p-1 font-serif">{row.horario || ''}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                    
+                    <button 
+                      onClick={() => setSchedule([...schedule, {grad:'', num:'', name:'', func:'', horario:''}])} 
+                      className="text-xs text-blue-600 flex items-center gap-1 mt-1 hover:underline"
+                    >
+                      <Plus size={12}/> Adicionar Linha
+                    </button>
                   </div>
 
-                  <div className="mb-6"><div className="text-center font-bold mb-2 uppercase">II – PARTE: INSTRUÇÃO</div><textarea className="w-full border-none outline-none resize-none font-serif text-[12pt] leading-normal text-left" rows={3} value={part2Text} onChange={e => setPart2Text(e.target.value)}/></div>
-                  <div className="mb-6"><div className="text-center font-bold mb-2 uppercase">III – PARTE: ASSUNTOS GERAIS/ADMINISTRATIVOS</div><textarea className="w-full border-none outline-none resize-none font-serif text-[11pt] leading-normal min-h-[400px] text-left" value={part3Text} onChange={e => setPart3Text(e.target.value)}/></div>
-                  <div className="mb-6"><div className="text-center font-bold mb-1 uppercase">IV – PARTE: OCORRÊNCIAS</div><div className="text-left mb-2 text-sm">Comunico-vos que:</div><textarea className="w-full border-none outline-none resize-none font-serif text-[12pt] leading-normal min-h-[100px] text-left" value={part4Text} onChange={e => setPart4Text(e.target.value)}/></div>
+                  <div className="mb-6">
+                    <div className="text-center font-bold mb-2 uppercase">II – PARTE: INSTRUÇÃO</div>
+                    <textarea 
+                      className="w-full border-none outline-none resize-none font-serif text-[12pt] leading-normal text-left" 
+                      rows={3} 
+                      value={part2Text} 
+                      onChange={e => setPart2Text(e.target.value)}
+                    />
+                  </div>
 
-                  <div className="mt-8"><div className="text-center font-bold mb-4 uppercase">V – PARTE: PASSAGEM DE SERVIÇO</div>
-                      <div className="text-left mb-8">FI-LA AO MEU SUBSTITUTO LEGAL, O <input className="border-b border-black w-64 text-center outline-none font-bold uppercase mx-1 font-serif" placeholder="GRADUAÇÃO / NOME" value={substituteName} onChange={e => setSubstituteName(e.target.value)}/>, A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.</div>
-                      <div className="text-center mb-12 uppercase font-bold"><input className="border-b border-black w-40 text-center outline-none uppercase font-serif font-bold" value={signCity} onChange={e => setSignCity(e.target.value)}/>, <input type="date" className="mx-2 border-b border-black outline-none text-center" value={signDate} onChange={e => setSignDate(e.target.value)}/></div>
-                      <div className="flex flex-col items-center">
-                          <div className="mb-2 h-16 flex items-end justify-center w-full">{signature ? <img src={signature} alt="Assinatura" className="h-14 object-contain"/> : <span className="text-gray-300 italic text-sm border-b border-gray-300 w-64 text-center">Assinatura Digital</span>}</div>
-                          <div className="border-t border-black w-2/3 pt-2 text-center"><div className="font-bold uppercase">{armorer?.name || 'NOME DO ARMEIRO'}</div><div className="uppercase">MAT: {armorer?.matricula || '000000'}</div></div>
-                          <div className="mt-4 w-full max-w-sm">{!signature ? (<SignaturePad onSave={setSignature} label="Assinar Agora" />) : (<button onClick={() => setSignature(null)} className="text-xs text-red-500 hover:underline mt-2 w-full text-center">Limpar Assinatura</button>)}</div>
+                  <div className="mb-6">
+                    <div className="text-center font-bold mb-2 uppercase">III – PARTE: ASSUNTOS GERAIS/ADMINISTRATIVOS</div>
+                    <textarea 
+                      className="w-full border-none outline-none resize-none font-serif text-[11pt] leading-normal min-h-[400px] text-left" 
+                      value={part3Text} 
+                      onChange={e => setPart3Text(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="mb-6">
+                    <div className="text-center font-bold mb-1 uppercase">IV – PARTE: OCORRÊNCIAS</div>
+                    <div className="text-left mb-2 text-sm">Comunico-vos que:</div>
+                    <textarea 
+                      className="w-full border-none outline-none resize-none font-serif text-[12pt] leading-normal min-h-[100px] text-left" 
+                      value={part4Text} 
+                      onChange={e => setPart4Text(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="mt-8">
+                    <div className="text-center font-bold mb-4 uppercase">V – PARTE: PASSAGEM DE SERVIÇO</div>
+                    <div className="text-left mb-8">
+                      FI-LA AO MEU SUBSTITUTO LEGAL, O <input 
+                        className="border-b border-black w-64 text-center outline-none font-bold uppercase mx-1 font-serif" 
+                        placeholder="GRADUAÇÃO / NOME" 
+                        value={substituteName} 
+                        onChange={e => setSubstituteName(e.target.value)}
+                      />, A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
+                    </div>
+                    <div className="text-center mb-12 uppercase font-bold">
+                      <input 
+                        className="border-b border-black w-40 text-center outline-none uppercase font-serif font-bold" 
+                        value={signCity} 
+                        onChange={e => setSignCity(e.target.value)}
+                      />, <input 
+                        type="date" 
+                        className="mx-2 border-b border-black outline-none text-center" 
+                        value={signDate} 
+                        onChange={e => setSignDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <div className="mb-2 h-16 flex items-end justify-center w-full">
+                        {signature ? 
+                          <img src={signature} alt="Assinatura" className="h-14 object-contain"/> : 
+                          <span className="text-gray-300 italic text-sm border-b border-gray-300 w-64 text-center">Assinatura Digital</span>
+                        }
                       </div>
+                      <div className="border-t border-black w-2/3 pt-2 text-center">
+                        <div className="font-bold uppercase">{armorer?.name || 'NOME DO ARMEIRO'}</div>
+                        <div className="uppercase">MAT: {armorer?.matricula || '000000'}</div>
+                      </div>
+                      <div className="mt-4 w-full max-w-sm">
+                        {!signature ? (
+                          <SignaturePad onSave={setSignature} label="Assinar Agora" />
+                        ) : (
+                          <button 
+                            onClick={() => setSignature(null)} 
+                            className="text-xs text-red-500 hover:underline mt-2 w-full text-center"
+                          >
+                            Limpar Assinatura
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
               </div>
           </div>
