@@ -1,15 +1,10 @@
 // =============================================
-//  documentService.ts (VERSÃO CORRIGIDA)
-//  Assinatura Centralizada
+//  documentService.ts (VERSÃO CORRIGIDA - DADOS DO ARMEIRO LOGADO)
 // =============================================
 
 export class DocumentService {
 
-    // -----------------------------------------
-    //  GERA O HTML COM A FORMATAÇÃO DO DOCUMENTO
-    // -----------------------------------------
     static buildHtml(data: any): string {
-        // Extrai os dados do formato do DailyBook
         const header = data.content?.header || {};
         const intro = data.content?.intro || {};
         const part1 = data.content?.part1 || [];
@@ -18,15 +13,17 @@ export class DocumentService {
         const part4 = data.content?.part4 || "Sem alterações a registrar.";
         const part5 = data.content?.part5 || {};
 
-        // Formata a data de visto
         const dateVisto = header.dateVisto ? new Date(header.dateVisto).toLocaleDateString('pt-BR') : '___/___/_____';
-        
-        // Formata as datas de início e fim
         const dateStart = intro.dateStart ? new Date(intro.dateStart).toLocaleDateString('pt-BR') : '___/___/_____';
         const dateEnd = intro.dateEnd ? new Date(intro.dateEnd).toLocaleDateString('pt-BR') : '___/___/_____';
 
-        // Gera a tabela da escala de serviço
         const escalaTabela = this.generateScheduleTable(part1);
+
+        // DADOS DO ARMEIRO LOGADO - CORRIGIDO
+        const armorerName = data.authorName || 'NOME DO ARMEIRO';
+        const armorerMatricula = data.authorId || '000000';
+        const armorerCity = part5.city || 'FORTALEZA';
+        const armorerDate = part5.date ? new Date(part5.date).toLocaleDateString('pt-BR') : '__/__/____';
 
         return `
 <!DOCTYPE html>
@@ -134,22 +131,23 @@ export class DocumentService {
         A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
     </p>
 
-    <!-- ASSINATURA PERFEITAMENTE CENTRALIZADA -->
-    <div style="margin-top: 100px; text-align: center; width: 100%;">
-        <div style="font-weight: bold; margin-bottom: 20px; font-size: 12pt;">
-            ${part5.city || 'FORTALEZA'}, ${part5.date ? new Date(part5.date).toLocaleDateString('pt-BR') : '__/__/____'}
-        </div>
-        <div style="border-top: 1px solid black; width: 300px; margin: 0 auto; padding-top: 20px; margin-bottom: 10px;"></div>
-        <div style="font-weight: bold; font-size: 12pt; margin-bottom: 5px;">${data.authorName || 'WILL ROBSON ALMERINDO SIQUEIRA'}</div>
-        <div style="font-size: 11pt;">MAT: ${data.authorId || '30671015'}</div>
-    </div>
+    <!-- ASSINATURA CENTRALIZADA COM DADOS DO ARMEIRO LOGADO -->
+    <table style="width: 100%; border: none; margin-top: 80px;">
+        <tr>
+            <td style="border: none; text-align: center;">
+                <div style="font-weight: bold; margin-bottom: 20px; font-size: 12pt;">
+                    ${armorerCity}, ${armorerDate}
+                </div>
+                <div style="border-top: 1px solid black; width: 300px; margin: 0 auto; padding-top: 20px; margin-bottom: 10px;"></div>
+                <div style="font-weight: bold; font-size: 12pt; margin-bottom: 5px;">${armorerName}</div>
+                <div style="font-size: 11pt;">MAT: ${armorerMatricula}</div>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>`;
     }
 
-    // -----------------------------------------
-    //  GERA A TABELA DA ESCALA DE SERVIÇO
-    // -----------------------------------------
     private static generateScheduleTable(schedule: any[]): string {
         if (!schedule || schedule.length === 0) {
             return '<p>Nenhuma escala definida.</p>';
@@ -192,9 +190,6 @@ export class DocumentService {
         return tableHtml;
     }
 
-    // -----------------------------------------
-    //  EXPORTAÇÃO PARA WORD (COMPATÍVEL VERCEL)
-    // -----------------------------------------
     static exportToWord(data: any): void {
         if (typeof window === 'undefined' || typeof document === 'undefined') {
             console.warn('Ambiente não suportado para exportação');
@@ -227,9 +222,6 @@ export class DocumentService {
         }
     }
 
-    // -----------------------------------------
-    //  EXPORTAÇÃO PARA PDF (COMPATÍVEL VERCEL)
-    // -----------------------------------------
     static exportToPDF(data: any): void {
         if (typeof window === 'undefined' || typeof document === 'undefined') {
             console.warn('Ambiente não suportado para exportação');
@@ -258,9 +250,6 @@ export class DocumentService {
         }
     }
 
-    // -----------------------------------------
-    //  MÉTODOS PARA DAILY BOOK (COMPATIBILIDADE)
-    // -----------------------------------------
     static generateWord(data: any): void {
         this.exportToWord(data);
     }
@@ -269,9 +258,6 @@ export class DocumentService {
         this.exportToPDF(data);
     }
 
-    // -----------------------------------------
-    //  MÉTODO AUXILIAR: DATA ATUAL
-    // -----------------------------------------
     private static getCurrentDate(): string {
         const now = new Date();
         const year = now.getFullYear();
@@ -281,5 +267,4 @@ export class DocumentService {
     }
 }
 
-// Exportação padrão para compatibilidade
 export default DocumentService;
