@@ -32,10 +32,7 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
   const [introDateEnd, setIntroDateEnd] = useState(new Date().toISOString().split('T')[0]);
 
   const [schedule, setSchedule] = useState<DailyPartSchedule[]>([
-      { grad: '', num: '', name: '', func: 'Armeiro', horario: '07h-07h' },
-      { grad: '', num: '', name: '', func: 'Auxiliar', horario: '07h-19h' },
-      { grad: '', num: '', name: '', func: '', horario: '' },
-      { grad: '', num: '', name: '', func: '', horario: '' }
+      { grad: 'CB', num: '30671015', name: 'WILLIAM SIQUEIRA', func: 'Armeiro', horario: '07h-07h' }
   ]);
 
   const [part2Text, setPart2Text] = useState('Sem alterações.');
@@ -67,9 +64,9 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
         return groups;
     };
 
-    let text = "Sem alterações administrativas.\n\n";
+    let text = "";
     
-    text += "1) MATERIAL BÉLICO:\n";
+    text += "a) MATERIAL BÉLICO:\n";
     const weapons = getStats(MaterialCategory.WEAPON);
     if(Object.keys(weapons).length === 0) text += "Nenhum armamento cadastrado.\n";
     Object.keys(weapons).forEach((name, idx) => {
@@ -77,21 +74,21 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
         text += `${name.toUpperCase()}:\n   RETIDAS: ${s.available}\n   CAUTELADAS: ${s.checkedOut}\n   MANUTENÇÃO: ${s.maintenance}\n   TOTAL: ${s.total}\n\n`;
     });
 
-    text += "2) MATERIAL DE COMUNICAÇÃO:\nHT:\n";
+    text += "b) MATERIAL DE COMUNICAÇÃO:\nHT:\n";
     const radios = getStats(MaterialCategory.RADIO);
     let rStats = {res:0, caut:0, maint:0};
     Object.values(radios).forEach(s => {rStats.res += s.available; rStats.caut += s.checkedOut; rStats.maint += s.maintenance;});
     text += `RESERVA: ${rStats.res}\nCAUTELADOS: ${rStats.caut}\nDEFEITOS: ${rStats.maint}\n\n`;
 
-    text += "3) MATERIAL DE PROTEÇÃO BALÍSTICA:\nCOLETES BALÍSTICOS:\n";
+    text += "c) MATERIAL DE PROTEÇÃO BALÍSTICA:\nCOLETES BALÍSTICOS:\n";
     const vests = getStats(MaterialCategory.VEST);
     let vTotal = 0;
     Object.values(vests).forEach(s => vTotal += s.total);
     text += `TOTAL: ${vTotal}\n\n`;
 
-    text += "4) MATERIAL DE SINALIZAÇÃO:\nSem alterações.\n\n";
+    text += "d) MATERIAL DE SINALIZAÇÃO:\nSem alterações.\n\n";
 
-    text += "5) MATERIAIS DIVERSOS:\nChaves da reserva; Livro de Cautela; Livro de Alterações; Móveis e Utensílios; Ar Condicionado; Bebedouro.";
+    text += "e) MATERIAIS DIVERSOS:\nChaves da reserva; Livro de Cautela; Livro de Alterações; Móveis e Utensílios; Ar Condicionado; Bebedouro.";
     setPart3Text(text);
   };
 
@@ -105,10 +102,7 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
     setIntroDateEnd(tomorrow.toISOString().split('T')[0]);
     setSignDate(today.toISOString().split('T')[0]);
     setSchedule([
-      { grad: armorer?.rank || '-', num: armorer?.numeral || armorer?.matricula || '', name: armorer?.warName || armorer?.name || '', func: 'Armeiro', horario: '07h-07h' },
-      { grad: '', num: '', name: '', func: 'Auxiliar', horario: '07h-19h' },
-      { grad: '', num: '', name: '', func: '', horario: '' },
-      { grad: '', num: '', name: '', func: '', horario: '' }
+      { grad: armorer?.rank || 'CB', num: armorer?.numeral || armorer?.matricula || '30671015', name: armorer?.warName || armorer?.name || 'WILLIAM SIQUEIRA', func: 'Armeiro', horario: '07h-07h' }
     ]);
     setPart2Text('Sem alterações.'); setPart4Text('Sem alterações a registrar.');
     generateInventoryText();
@@ -217,26 +211,44 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
               <div className="bg-white text-black w-[210mm] min-h-[297mm] p-[20mm] shadow-xl" style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '12pt', lineHeight: '1.5' }}>
                   
                   {/* TITLE */}
-                  <div className="text-center font-bold mb-4 text-lg">LIVRO DE ALTERAÇÕES</div>
+                  <div className="text-center font-bold mb-6 text-lg">LIVRO DE ALTERAÇÕES</div>
 
-                  {/* HEADER */}
-                  <table className="w-full border-collapse border border-black mb-6"><tbody><tr>
-                      <td className="w-[35%] border border-black p-2 align-top text-center">
-                          <div className="text-xs font-bold">VISTO EM:</div>
+                  {/* HEADER - NOVO LAYOUT */}
+                  <table className="w-full border-collapse border border-black mb-6">
+                    <tbody>
+                      <tr>
+                        <td className="w-[30%] border border-black p-2 align-top text-center">
+                          <div className="text-xs font-bold">VISTO POR ALTERAÇÃO</div>
                           <input type="date" className="w-32 text-center border-b border-black outline-none text-sm my-2" value={dateVisto} onChange={e => setDateVisto(e.target.value)}/>
-                          <div className="mt-4 pt-1"><input type="text" className="w-full text-center font-bold text-xs uppercase outline-none" placeholder="NOME FISCAL" value={fiscalName} onChange={e => setFiscalName(e.target.value)}/><div className="text-xs font-bold">FISCAL ADMIN</div></div>
-                      </td>
-                      <td className="w-[65%] border border-black p-2 text-center align-middle">
+                          <div className="mt-4 pt-1">
+                            <input type="text" className="w-full text-center font-bold text-xs uppercase outline-none" placeholder="NOME FISCAL" value={fiscalName} onChange={e => setFiscalName(e.target.value)}/>
+                            <div className="text-xs font-bold">RESPONSÁVEL</div>
+                          </div>
+                        </td>
+                        <td className="w-[70%] border border-black p-2 text-center align-middle">
                           <div className="font-bold uppercase">POLÍCIA MILITAR DO CEARÁ</div>
-                          <div className="flex justify-center gap-2 my-1 text-xs font-bold"><input type="text" className="w-12 text-center border-b border-black outline-none uppercase" placeholder="___" value={crpm} onChange={e => setCrpm(e.target.value)}/><span>CRPM</span></div>
-                          <div className="flex justify-center gap-2 mb-2 text-xs font-bold"><input type="text" className="w-12 text-center border-b border-black outline-none uppercase" placeholder="___" value={bpm} onChange={e => setBpm(e.target.value)}/><span>BPM</span><span>----------</span><input type="text" className="w-32 text-center border-b border-black outline-none uppercase" placeholder="CIDADE" value={city} onChange={e => setCity(e.target.value)}/></div>
+                          <div className="flex justify-center gap-2 my-1 text-xs font-bold">
+                            <input type="text" className="w-20 text-center border-b border-black outline-none uppercase" placeholder="CRPM" value={crpm} onChange={e => setCrpm(e.target.value)}/>
+                            <span>CRPM</span>
+                            <input type="text" className="w-20 text-center border-b border-black outline-none uppercase" placeholder="BPM" value={bpm} onChange={e => setBpm(e.target.value)}/>
+                            <span>BPM</span>
+                            <input type="text" className="w-32 text-center border-b border-black outline-none uppercase" placeholder="CIDADE" value={city} onChange={e => setCity(e.target.value)}/>
+                          </div>
                           <div className="font-bold underline uppercase mt-2">RESERVA DE ARMAMENTO</div>
-                      </td>
-                  </tr></tbody></table>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
 
-                  <div className="text-left mb-6">Parte diária do armeiro do <span className="font-bold uppercase">{bpm || '___'}</span> batalhão do dia <input type="date" className="mx-2 w-32 border-b border-black outline-none text-center" value={introDateStart} onChange={e => setIntroDateStart(e.target.value)}/> para o dia <input type="date" className="mx-2 w-32 border-b border-black outline-none text-center" value={introDateEnd} onChange={e => setIntroDateEnd(e.target.value)}/>, ao Senhor Fiscal Administrativo.</div>
+                  <div className="text-left mb-6 text-sm">
+                    Parte diária do armeiro do <span className="font-bold uppercase">{bpm || '___'}</span> batalhão do dia {' '}
+                    <input type="date" className="mx-1 w-32 border-b border-black outline-none text-center" value={introDateStart} onChange={e => setIntroDateStart(e.target.value)}/> {' '}
+                    para o dia {' '}
+                    <input type="date" className="mx-1 w-32 border-b border-black outline-none text-center" value={introDateEnd} onChange={e => setIntroDateEnd(e.target.value)}/>, {' '}
+                    ao Senhor Fiscal Administrativo.
+                  </div>
 
-                  {/* ESCALA DE SERVIÇO - VERSÃO CORRIGIDA */}
+                  {/* ESCALA DE SERVIÇO */}
                   <div className="mb-6">
                     <div className="text-center font-bold mb-2 uppercase">I – PARTE: ESCALA DE SERVIÇO</div>
                     
@@ -254,7 +266,7 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                           <tr>
                             <th className="border border-black bg-gray-100 p-1">GRAD</th>
                             <th className="border border-black bg-gray-100 p-1">Nº</th>
-                            <th className="border border-black bg-gray-100 p-1 w-[40%]">NOME</th>
+                            <th className="border border-black bg-gray-100 p-1">NOME</th>
                             <th className="border border-black bg-gray-100 p-1">FUNÇÃO</th>
                             <th className="border border-black bg-gray-100 p-1">HORÁRIO</th>
                             <th className="border border-black bg-gray-100 p-1 w-8">Ação</th>
@@ -335,13 +347,19 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                         </tbody>
                       </table>
                     ) : (
-                      // Tabela para visualização/exportação
+                      // Tabela para visualização/exportação - NOVO LAYOUT
                       <table className="w-full border-collapse border border-black text-center text-sm">
                         <thead>
                           <tr>
+                            <th className="border border-black bg-gray-100 p-1" colSpan={2}>Nº</th>
+                            <th className="border border-black bg-gray-100 p-1">NOME</th>
+                            <th className="border border-black bg-gray-100 p-1">FUNÇÃO</th>
+                            <th className="border border-black bg-gray-100 p-1">HORÁRIO</th>
+                          </tr>
+                          <tr>
                             <th className="border border-black bg-gray-100 p-1">GRAD</th>
                             <th className="border border-black bg-gray-100 p-1">Nº</th>
-                            <th className="border border-black bg-gray-100 p-1 w-[40%]">NOME</th>
+                            <th className="border border-black bg-gray-100 p-1">NOME</th>
                             <th className="border border-black bg-gray-100 p-1">FUNÇÃO</th>
                             <th className="border border-black bg-gray-100 p-1">HORÁRIO</th>
                           </tr>
@@ -368,68 +386,83 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                     </button>
                   </div>
 
+                  {/* PARTE II - INSTRUÇÃO */}
                   <div className="mb-6">
                     <div className="text-center font-bold mb-2 uppercase">II – PARTE: INSTRUÇÃO</div>
                     <textarea 
                       className="w-full border-none outline-none resize-none font-serif text-[12pt] leading-normal text-left" 
-                      rows={3} 
+                      rows={2} 
                       value={part2Text} 
                       onChange={e => setPart2Text(e.target.value)}
                     />
                   </div>
 
+                  {/* PARTE III - ASSUNTOS GERAIS/ADMINISTRATIVOS */}
                   <div className="mb-6">
                     <div className="text-center font-bold mb-2 uppercase">III – PARTE: ASSUNTOS GERAIS/ADMINISTRATIVOS</div>
                     <textarea 
-                      className="w-full border-none outline-none resize-none font-serif text-[11pt] leading-normal min-h-[400px] text-left" 
+                      className="w-full border-none outline-none resize-none font-serif text-[11pt] leading-normal min-h-[300px] text-left" 
                       value={part3Text} 
                       onChange={e => setPart3Text(e.target.value)}
+                      style={{ whiteSpace: 'pre-line' }}
                     />
                   </div>
 
+                  {/* PARTE IV - OCORRÊNCIAS */}
                   <div className="mb-6">
                     <div className="text-center font-bold mb-1 uppercase">IV – PARTE: OCORRÊNCIAS</div>
                     <div className="text-left mb-2 text-sm">Comunico-vos que:</div>
                     <textarea 
-                      className="w-full border-none outline-none resize-none font-serif text-[12pt] leading-normal min-h-[100px] text-left" 
+                      className="w-full border-none outline-none resize-none font-serif text-[12pt] leading-normal min-h-[80px] text-left" 
                       value={part4Text} 
                       onChange={e => setPart4Text(e.target.value)}
                     />
                   </div>
 
+                  {/* PARTE V - PASSAGEM DE SERVIÇO */}
                   <div className="mt-8">
                     <div className="text-center font-bold mb-4 uppercase">V – PARTE: PASSAGEM DE SERVIÇO</div>
-                    <div className="text-left mb-8">
-                      FI-LA AO MEU SUBSTITUTO LEGAL, O <input 
+                    <div className="text-left mb-8 text-sm">
+                      FI-LA AO MEU SUBSTITUTO LEGAL, O {' '}
+                      <input 
                         className="border-b border-black w-64 text-center outline-none font-bold uppercase mx-1 font-serif" 
                         placeholder="GRADUAÇÃO / NOME" 
                         value={substituteName} 
                         onChange={e => setSubstituteName(e.target.value)}
-                      />, A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
+                      />, {' '}
+                      A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
                     </div>
-                    <div className="text-center mb-12 uppercase font-bold">
+                    
+                    <div className="text-center mb-8 uppercase font-bold">
                       <input 
                         className="border-b border-black w-40 text-center outline-none uppercase font-serif font-bold" 
                         value={signCity} 
                         onChange={e => setSignCity(e.target.value)}
-                      />, <input 
+                      />, {' '}
+                      <input 
                         type="date" 
-                        className="mx-2 border-b border-black outline-none text-center" 
+                        className="mx-1 border-b border-black outline-none text-center w-32" 
                         value={signDate} 
                         onChange={e => setSignDate(e.target.value)}
                       />
                     </div>
-                    <div className="flex flex-col items-center">
+
+                    {/* ASSINATURA */}
+                    <div className="flex flex-col items-center mt-12">
                       <div className="mb-2 h-16 flex items-end justify-center w-full">
                         {signature ? 
-                          <img src={signature} alt="Assinatura" className="h-14 object-contain"/> : 
-                          <span className="text-gray-300 italic text-sm border-b border-gray-300 w-64 text-center">Assinatura Digital</span>
+                          <img src={signature} alt="Assinatura" className="h-12 object-contain"/> : 
+                          <div className="text-center">
+                            <div className="text-gray-400 italic text-sm border-b border-gray-400 w-64 pb-1">Assinatura Digital</div>
+                            <div className="text-xs text-gray-500 mt-1">___________________________________</div>
+                          </div>
                         }
                       </div>
-                      <div className="border-t border-black w-2/3 pt-2 text-center">
-                        <div className="font-bold uppercase">{armorer?.name || 'NOME DO ARMEIRO'}</div>
-                        <div className="uppercase">MAT: {armorer?.matricula || '000000'}</div>
+                      <div className="text-center">
+                        <div className="font-bold uppercase text-sm">{armorer?.name || 'NOME DO ARMEIRO'}</div>
+                        <div className="uppercase text-xs">MAT: {armorer?.matricula || '000000'}</div>
                       </div>
+                      
                       <div className="mt-4 w-full max-w-sm">
                         {!signature ? (
                           <SignaturePad onSave={setSignature} label="Assinar Agora" />
