@@ -1,10 +1,12 @@
 // =============================================
-//  documentService.ts (VERSÃO CORRIGIDA - ASSINATURA CENTRALIZADA)
+//  documentService.ts (VERSÃO CORRIGIDA - CENTRALIZAÇÃO GARANTIDA)
 // =============================================
 
 export class DocumentService {
 
     static buildHtml(data: any): string {
+        console.log('Dados recebidos para exportação:', data); // DEBUG
+        
         const header = data.content?.header || {};
         const intro = data.content?.intro || {};
         const part1 = data.content?.part1 || [];
@@ -13,17 +15,20 @@ export class DocumentService {
         const part4 = data.content?.part4 || "Sem alterações a registrar.";
         const part5 = data.content?.part5 || {};
 
+        // Formata datas
         const dateVisto = header.dateVisto ? new Date(header.dateVisto).toLocaleDateString('pt-BR') : '___/___/_____';
         const dateStart = intro.dateStart ? new Date(intro.dateStart).toLocaleDateString('pt-BR') : '___/___/_____';
         const dateEnd = intro.dateEnd ? new Date(intro.dateEnd).toLocaleDateString('pt-BR') : '___/___/_____';
 
-        const escalaTabela = this.generateScheduleTable(part1);
+        // DADOS DO ARMEIRO - BUSCA EM MÚLTIPLOS CAMPOS
+        const armorerName = data.authorName || data.content?.authorName || 'NOME DO ARMEIRO';
+        const armorerMatricula = data.authorId || data.content?.authorId || '000000';
+        const armorerCity = part5.city || header.city || 'FORTALEZA';
+        const armorerDate = part5.date ? new Date(part5.date).toLocaleDateString('pt-BR') : '__/__/____';
 
-        // DADOS DO ARMEIRO LOGADO
-        const armorerName = data.authorName || 'WILL ROBSON ALMERINDO SIQUEIRA';
-        const armorerMatricula = data.authorId || '30671015';
-        const armorerCity = part5.city || 'FORTALEZA';
-        const armorerDate = part5.date ? new Date(part5.date).toLocaleDateString('pt-BR') : '21/11/2025';
+        console.log('Dados do armeiro:', { armorerName, armorerMatricula, armorerCity, armorerDate }); // DEBUG
+
+        const escalaTabela = this.generateScheduleTable(part1);
 
         return `
 <!DOCTYPE html>
@@ -32,57 +37,73 @@ export class DocumentService {
     <meta charset="UTF-8" />
     <title>Livro de Alterações</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
             font-family: "Times New Roman", Times, serif;
             font-size: 12pt;
-            margin: 20mm;
-            line-height: 1.5;
+            margin: 25mm;
+            line-height: 1.6;
+            width: 100%;
         }
         h1 {
             text-align: center;
             font-weight: bold;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
+            font-size: 16pt;
         }
         .parte-titulo {
             text-align: center;
             font-weight: bold;
-            margin-top: 20px;
-            margin-bottom: 10px;
+            margin-top: 25px;
+            margin-bottom: 15px;
             font-size: 12pt;
             text-decoration: underline;
-        }
-        p, div {
-            text-align: left;
-            margin: 8px 0;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 10px 0 20px 0;
+            margin: 15px 0 25px 0;
         }
         table, tr, td, th {
             border: 1px solid black;
-            padding: 4px;
+            padding: 6px;
             font-size: 11pt;
         }
         th {
             background-color: #f0f0f0;
             font-weight: bold;
-        }
-        .header-table {
-            margin-bottom: 20px;
-        }
-        .assinatura-centralizada {
-            margin-top: 100px;
             text-align: center;
+        }
+        .assinatura-container {
+            margin-top: 120px;
             width: 100%;
+            text-align: center;
+        }
+        .cidade-data {
+            font-weight: bold;
+            font-size: 12pt;
+            margin-bottom: 25px;
+            text-align: center;
         }
         .linha-assinatura {
-            border-top: 1px solid black;
-            width: 300px;
-            margin: 0 auto;
-            padding-top: 20px;
-            margin-bottom: 15px;
+            border-top: 1px solid #000;
+            width: 350px;
+            margin: 0 auto 15px auto;
+            padding-top: 25px;
+        }
+        .nome-armeiro {
+            font-weight: bold;
+            font-size: 12pt;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        .matricula {
+            font-size: 11pt;
+            text-align: center;
         }
     </style>
 </head>
@@ -90,22 +111,22 @@ export class DocumentService {
     <h1>LIVRO DE ALTERAÇÕES</h1>
 
     <!-- CABEÇALHO -->
-    <table class="header-table">
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
         <tr>
-            <td style="width: 30%; border: 1px solid black; padding: 8px; text-align: center; vertical-align: top;">
+            <td style="width: 35%; border: 1px solid black; padding: 10px; text-align: center; vertical-align: top;">
                 <div style="font-weight: bold; font-size: 10pt;">VISTO POR ALTERAÇÃO</div>
-                <div style="margin: 10px 0; font-size: 11pt;">${dateVisto}</div>
-                <div style="font-weight: bold; margin-top: 15px;">${header.fiscal || 'NOME FISCAL'}</div>
-                <div style="font-weight: bold; font-size: 10pt;">RESPONSÁVEL</div>
+                <div style="margin: 12px 0; font-size: 11pt;">${dateVisto}</div>
+                <div style="font-weight: bold; margin-top: 20px;">${header.fiscal || 'NOME FISCAL'}</div>
+                <div style="font-weight: bold; font-size: 10pt; margin-top: 5px;">RESPONSÁVEL</div>
             </td>
-            <td style="width: 70%; border: 1px solid black; padding: 8px; text-align: center; vertical-align: middle;">
-                <div style="font-weight: bold; font-size: 12pt;">POLÍCIA MILITAR DO CEARÁ</div>
-                <div style="margin: 5px 0; font-size: 10pt; font-weight: bold;">
+            <td style="width: 65%; border: 1px solid black; padding: 10px; text-align: center; vertical-align: middle;">
+                <div style="font-weight: bold; font-size: 13pt;">POLÍCIA MILITAR DO CEARÁ</div>
+                <div style="margin: 8px 0; font-size: 10pt; font-weight: bold;">
                     CRPM <strong>${header.crpm || '___'}</strong> 
                     BPM <strong>${header.bpm || '___'}</strong> 
                     <strong>${header.city || 'CAUCAIA'}</strong>
                 </div>
-                <div style="font-weight: bold; text-decoration: underline; margin-top: 10px; font-size: 12pt;">
+                <div style="font-weight: bold; text-decoration: underline; margin-top: 12px; font-size: 12pt;">
                     RESERVA DE ARMAMENTO
                 </div>
             </td>
@@ -113,7 +134,7 @@ export class DocumentService {
     </table>
 
     <!-- INTRODUÇÃO -->
-    <p style="text-align: left; margin-bottom: 20px;">
+    <p style="text-align: left; margin-bottom: 25px;">
         Parte diária do armeiro do <strong>${intro.bpm || '___'}</strong> batalhão 
         do dia <strong>${dateStart}</strong> para o dia <strong>${dateEnd}</strong>, 
         ao Senhor Fiscal Administrativo.
@@ -125,32 +146,30 @@ export class DocumentService {
 
     <!-- II – PARTE: INSTRUÇÃO -->
     <div class="parte-titulo">II – PARTE: INSTRUÇÃO</div>
-    <p>${part2}</p>
+    <p style="text-align: left;">${part2}</p>
 
     <!-- III – PARTE: ASSUNTOS GERAIS/ADMINISTRATIVOS -->
     <div class="parte-titulo">III – PARTE: ASSUNTOS GERAIS/ADMINISTRATIVOS</div>
-    <div style="white-space: pre-line; font-size: 11pt;">${part3}</div>
+    <div style="white-space: pre-line; font-size: 11pt; text-align: left;">${part3}</div>
 
     <!-- IV – PARTE: OCORRÊNCIAS -->
     <div class="parte-titulo">IV – PARTE: OCORRÊNCIAS</div>
-    <p>Comunico-vos que:</p>
-    <p>${part4}</p>
+    <p style="text-align: left;">Comunico-vos que:</p>
+    <p style="text-align: left;">${part4}</p>
 
     <!-- V – PARTE: PASSAGEM DE SERVIÇO -->
     <div class="parte-titulo">V – PARTE: PASSAGEM DE SERVIÇO</div>
-    <p style="margin-bottom: 30px;">
+    <p style="margin-bottom: 40px; text-align: left;">
         FI-LA AO MEU SUBSTITUTO LEGAL, O <strong>${part5.substitute || 'GRADUAÇÃO / NOME'}</strong>, 
         A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
     </p>
 
     <!-- ASSINATURA PERFEITAMENTE CENTRALIZADA -->
-    <div class="assinatura-centralizada">
-        <div style="font-weight: bold; margin-bottom: 20px; font-size: 12pt;">
-            ${armorerCity}, ${armorerDate}
-        </div>
+    <div class="assinatura-container">
+        <div class="cidade-data">${armorerCity}, ${armorerDate}</div>
         <div class="linha-assinatura"></div>
-        <div style="font-weight: bold; font-size: 12pt; margin-bottom: 8px;">${armorerName}</div>
-        <div style="font-size: 11pt;">MAT: ${armorerMatricula}</div>
+        <div class="nome-armeiro">${armorerName}</div>
+        <div class="matricula">MAT: ${armorerMatricula}</div>
     </div>
 </body>
 </html>`;
@@ -165,17 +184,17 @@ export class DocumentService {
         <table>
             <thead>
                 <tr>
-                    <th colspan="2">Nº</th>
-                    <th>NOME</th>
-                    <th>FUNÇÃO</th>
-                    <th>HORÁRIO</th>
+                    <th colspan="2" style="text-align: center;">Nº</th>
+                    <th style="text-align: center;">NOME</th>
+                    <th style="text-align: center;">FUNÇÃO</th>
+                    <th style="text-align: center;">HORÁRIO</th>
                 </tr>
                 <tr>
-                    <th>GRAD</th>
-                    <th>Nº</th>
-                    <th>NOME</th>
-                    <th>FUNÇÃO</th>
-                    <th>HORÁRIO</th>
+                    <th style="text-align: center;">GRAD</th>
+                    <th style="text-align: center;">Nº</th>
+                    <th style="text-align: center;">NOME</th>
+                    <th style="text-align: center;">FUNÇÃO</th>
+                    <th style="text-align: center;">HORÁRIO</th>
                 </tr>
             </thead>
             <tbody>`;
@@ -183,11 +202,11 @@ export class DocumentService {
         schedule.forEach((row, index) => {
             tableHtml += `
                 <tr>
-                    <td>${row.grad || '-'}</td>
-                    <td>${row.num || ''}</td>
-                    <td>${row.name || ''}</td>
-                    <td>${row.func || ''}</td>
-                    <td>${row.horario || ''}</td>
+                    <td style="text-align: center;">${row.grad || '-'}</td>
+                    <td style="text-align: center;">${row.num || ''}</td>
+                    <td style="text-align: center;">${row.name || ''}</td>
+                    <td style="text-align: center;">${row.func || ''}</td>
+                    <td style="text-align: center;">${row.horario || ''}</td>
                 </tr>`;
         });
 
