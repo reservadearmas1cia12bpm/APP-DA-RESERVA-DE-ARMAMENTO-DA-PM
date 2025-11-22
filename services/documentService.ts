@@ -75,15 +75,16 @@ export class DocumentService {
         .header-table {
             margin-bottom: 20px;
         }
-        .assinatura {
-            margin-top: 40px;
+        .assinatura-centralizada {
+            margin-top: 80px;
             text-align: center;
         }
-        .signature-line {
+        .linha-assinatura {
             border-top: 1px solid black;
-            width: 200px;
+            width: 250px;
             margin: 0 auto;
-            padding-top: 5px;
+            padding-top: 15px;
+            margin-bottom: 8px;
         }
     </style>
 </head>
@@ -143,16 +144,15 @@ export class DocumentService {
         FI-LA AO MEU SUBSTITUTO LEGAL, O <strong>${part5.substitute || 'GRADUAÇÃO / NOME'}</strong>, 
         A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
     </p>
-    
-    <div style="text-align: center; margin-bottom: 40px; font-weight: bold;">
-        ${part5.city || 'CAUCAIA'}, ${part5.date ? new Date(part5.date).toLocaleDateString('pt-BR') : '__/__/____'}
-    </div>
 
-    <!-- ASSINATURA -->
-    <div class="assinatura">
-        <div class="signature-line"></div>
-        <div style="margin-top: 5px; font-weight: bold;">${data.authorName || 'NOME DO ARMEIRO'}</div>
-        <div style="font-size: 10pt;">MAT: ${data.authorId || '000000'}</div>
+    <!-- ASSINATURA CENTRALIZADA -->
+    <div class="assinatura-centralizada">
+        <div style="font-weight: bold; margin-bottom: 10px; font-size: 11pt;">
+            ${part5.city || 'FORTALEZA'}, ${part5.date ? new Date(part5.date).toLocaleDateString('pt-BR') : '__/__/____'}
+        </div>
+        <div class="linha-assinatura"></div>
+        <div style="font-weight: bold; font-size: 11pt; margin-bottom: 2px;">${data.authorName || 'WILL ROBSON ALMERINDO SIQUEIRA'}</div>
+        <div style="font-size: 10pt;">MAT: ${data.authorId || '30671015'}</div>
     </div>
 </body>
 </html>`;
