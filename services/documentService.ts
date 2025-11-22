@@ -1,5 +1,5 @@
 // =============================================
-//  documentService.ts (VERSÃO CORRIGIDA - DADOS DO ARMEIRO LOGADO)
+//  documentService.ts (VERSÃO CORRIGIDA - ASSINATURA CENTRALIZADA)
 // =============================================
 
 export class DocumentService {
@@ -19,11 +19,11 @@ export class DocumentService {
 
         const escalaTabela = this.generateScheduleTable(part1);
 
-        // DADOS DO ARMEIRO LOGADO - CORRIGIDO
-        const armorerName = data.authorName || 'NOME DO ARMEIRO';
-        const armorerMatricula = data.authorId || '000000';
+        // DADOS DO ARMEIRO LOGADO
+        const armorerName = data.authorName || 'WILL ROBSON ALMERINDO SIQUEIRA';
+        const armorerMatricula = data.authorId || '30671015';
         const armorerCity = part5.city || 'FORTALEZA';
-        const armorerDate = part5.date ? new Date(part5.date).toLocaleDateString('pt-BR') : '__/__/____';
+        const armorerDate = part5.date ? new Date(part5.date).toLocaleDateString('pt-BR') : '21/11/2025';
 
         return `
 <!DOCTYPE html>
@@ -71,6 +71,18 @@ export class DocumentService {
         }
         .header-table {
             margin-bottom: 20px;
+        }
+        .assinatura-centralizada {
+            margin-top: 100px;
+            text-align: center;
+            width: 100%;
+        }
+        .linha-assinatura {
+            border-top: 1px solid black;
+            width: 300px;
+            margin: 0 auto;
+            padding-top: 20px;
+            margin-bottom: 15px;
         }
     </style>
 </head>
@@ -131,19 +143,15 @@ export class DocumentService {
         A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
     </p>
 
-    <!-- ASSINATURA CENTRALIZADA COM DADOS DO ARMEIRO LOGADO -->
-    <table style="width: 100%; border: none; margin-top: 80px;">
-        <tr>
-            <td style="border: none; text-align: center;">
-                <div style="font-weight: bold; margin-bottom: 20px; font-size: 12pt;">
-                    ${armorerCity}, ${armorerDate}
-                </div>
-                <div style="border-top: 1px solid black; width: 300px; margin: 0 auto; padding-top: 20px; margin-bottom: 10px;"></div>
-                <div style="font-weight: bold; font-size: 12pt; margin-bottom: 5px;">${armorerName}</div>
-                <div style="font-size: 11pt;">MAT: ${armorerMatricula}</div>
-            </td>
-        </tr>
-    </table>
+    <!-- ASSINATURA PERFEITAMENTE CENTRALIZADA -->
+    <div class="assinatura-centralizada">
+        <div style="font-weight: bold; margin-bottom: 20px; font-size: 12pt;">
+            ${armorerCity}, ${armorerDate}
+        </div>
+        <div class="linha-assinatura"></div>
+        <div style="font-weight: bold; font-size: 12pt; margin-bottom: 8px;">${armorerName}</div>
+        <div style="font-size: 11pt;">MAT: ${armorerMatricula}</div>
+    </div>
 </body>
 </html>`;
     }
