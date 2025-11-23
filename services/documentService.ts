@@ -161,12 +161,7 @@ export class DocumentService {
         let tableHtml = `
         <table>
             <thead>
-                <tr>
-                    <th colspan="2">Nº</th>
-                    <th>NOME</th>
-                    <th>FUNÇÃO</th>
-                    <th>HORÁRIO</th>
-                </tr>
+              
                 <tr>
                     <th>GRAD</th>
                     <th>Nº</th>
