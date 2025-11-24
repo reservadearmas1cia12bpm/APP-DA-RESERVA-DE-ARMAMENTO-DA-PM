@@ -349,13 +349,7 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                     ) : (
                       // Tabela para visualização/exportação - NOVO LAYOUT
                       <table className="w-full border-collapse border border-black text-center text-sm">
-                        <thead>
-                          <tr>
-                            <th className="border border-black bg-gray-100 p-1" colSpan={2}>Nº</th>
-                            <th className="border border-black bg-gray-100 p-1">NOME</th>
-                            <th className="border border-black bg-gray-100 p-1">FUNÇÃO</th>
-                            <th className="border border-black bg-gray-100 p-1">HORÁRIO</th>
-                          </tr>
+                        <thead>                     
                           <tr>
                             <th className="border border-black bg-gray-100 p-1">GRAD</th>
                             <th className="border border-black bg-gray-100 p-1">Nº</th>
