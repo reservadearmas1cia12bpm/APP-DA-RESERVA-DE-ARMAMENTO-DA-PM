@@ -48,24 +48,23 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
 
   const loadHistory = () => setHistory(StorageService.getDailyParts());
 
-  // Helper: format date por extenso (com opção de incluir dia da semana) - CORRIGIDA
+  // Helper: format date por extenso (com opção de incluir dia da semana) - VERSÃO SIMPLIFICADA
   const formatDateLong = (isoDate: string | undefined | null, includeWeekday = true) => {
     if (!isoDate) return '___';
+    
     try {
-      // Garantir que a data está no formato correto
-      let dateString = isoDate;
-      if (isoDate.includes('T')) {
-        dateString = isoDate.split('T')[0];
+      // Criar data de forma mais simples
+      const dateObj = new Date(isoDate);
+      
+      // Se for inválida, tentar formato alternativo
+      if (isNaN(dateObj.getTime())) {
+        const altDateObj = new Date(isoDate + 'T00:00:00');
+        if (isNaN(altDateObj.getTime())) {
+          return '___';
+        }
+        return formatDateLong(isoDate + 'T00:00:00', includeWeekday);
       }
-      
-      const [year, month, day] = dateString.split('-').map(Number);
-      const dataObj = new Date(year, month - 1, day);
-      
-      // Verificar se a data é válida
-      if (isNaN(dataObj.getTime())) {
-        return '___';
-      }
-      
+
       const meses = [
         'janeiro','fevereiro','março','abril','maio','junho',
         'julho','agosto','setembro','outubro','novembro','dezembro'
@@ -73,31 +72,15 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
       const diasSemana = [
         'domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'
       ];
-      const dia = dataObj.getDate();
-      const mes = meses[dataObj.getMonth()];
-      const ano = dataObj.getFullYear();
-      const weekday = diasSemana[dataObj.getDay()];
+      
+      const dia = dateObj.getDate();
+      const mes = meses[dateObj.getMonth()];
+      const ano = dateObj.getFullYear();
+      const weekday = diasSemana[dateObj.getDay()];
+      
       return includeWeekday ? `${dia} de ${mes} de ${ano} (${weekday})` : `${dia} de ${mes} de ${ano}`;
     } catch (e) {
-      return '___';
-    }
-  };
-
-  // Nova função para exportação - mais robusta
-  const formatDateForExport = (isoDate: string | undefined | null, includeWeekday = true) => {
-    if (!isoDate) return '___';
-    try {
-      const dateObj = new Date(isoDate);
-      if (isNaN(dateObj.getTime())) {
-        // Tentar formato alternativo se o primeiro falhar
-        const altDateObj = new Date(isoDate + 'T00:00:00');
-        if (isNaN(altDateObj.getTime())) {
-          return '___';
-        }
-        return formatDateLong(isoDate, includeWeekday);
-      }
-      return formatDateLong(isoDate, includeWeekday);
-    } catch (e) {
+      console.error('Erro ao formatar data:', isoDate, e);
       return '___';
     }
   };
@@ -198,7 +181,14 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
       if (!armorer) return;
       const authName = `${armorer.name} ${armorer.rank ? `- ${armorer.rank}` : ''}`;
       
-      // Usar a função mais robusta para exportação
+      console.log('Datas para exportação:', {
+        introDateStart,
+        introDateEnd,
+        formattedStart: formatDateLong(introDateStart, true),
+        formattedEnd: formatDateLong(introDateEnd, true)
+      });
+      
+      // create a copy of data but with intro dates formatted por extenso (with weekday)
       const exportData: DailyPart = {
         id: currentPartId || 'temp',
         createdAt: new Date().toISOString(),
@@ -209,11 +199,11 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
         signature: signature || undefined,
         content: {
             header: { fiscal: fiscalName, dateVisto, crpm, bpm, city },
-            // Usar a função corrigida para formatação
+            // replace dateStart/dateEnd with formatted long strings (including weekday)
             intro: { 
               bpm, 
-              dateStart: formatDateForExport(introDateStart, true), 
-              dateEnd: formatDateForExport(introDateEnd, true) 
+              dateStart: formatDateLong(introDateStart, true), 
+              dateEnd: formatDateLong(introDateEnd, true) 
             } as any,
             part1: schedule,
             part2: part2Text,
@@ -242,7 +232,7 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                           {history.map(part => (
                              <tr key={part.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
-                                 <td className="px-6 py-4">{formatDateForExport(part.content.intro.dateStart, true)}</td>
+                                 <td className="px-6 py-4">{formatDateLong(part.content.intro.dateStart, true)}</td>
                                  <td className="px-6 py-4">{part.authorName}</td>
                                  <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs font-bold ${part.status==='FINAL'?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}`}>{part.status==='FINAL'?'Finalizado':'Rascunho'}</span></td>
                                  <td className="px-6 py-4 text-right"><button onClick={() => { setCurrentPartId(part.id); setIsDraft(part.status==='DRAFT'); setFiscalName(part.content.header.fiscal); setDateVisto(part.content.header.dateVisto); setCrpm(part.content.header.crpm); setBpm(part.content.header.bpm); setCity(part.content.header.city); setIntroDateStart(part.content.intro.dateStart); setIntroDateEnd(part.content.intro.dateEnd); setSchedule(part.content.part1); setPart2Text(part.content.part2); setPart3Text(part.content.part3); setPart4Text(part.content.part4); setSubstituteName(part.content.part5.substitute); setSignCity(part.content.part5.city); setSignDate(part.content.part5.date); setSignature(part.signature || null); setMode('EDITOR'); }} className="text-blue-600 hover:underline flex items-center justify-end gap-1 w-full"><Edit3 size={16}/> Abrir</button></td>
@@ -301,18 +291,42 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                     </tbody>
                   </table>
 
+                  {/* TEXTO INTRODUTÓRIO - VERSÃO SIMPLIFICADA */}
                   <div className="text-left mb-6 text-sm">
                     Parte diária do armeiro do <span className="font-bold uppercase">{bpm || '___'}</span> batalhão do dia {' '}
                     <input type="date" className="mx-1 w-32 border-b border-black outline-none text-center" value={introDateStart} onChange={e => setIntroDateStart(e.target.value)}/> {' '}
-                    <span className="text-xs ml-2">{formatDateForExport(introDateStart, true)}</span>
+                    <span className="text-xs ml-2">
+                      {(() => {
+                        try {
+                          const date = new Date(introDateStart);
+                          if (isNaN(date.getTime())) return '___';
+                          const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+                          const diasSemana = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+                          return `${date.getDate()} de ${meses[date.getMonth()]} de ${date.getFullYear()} (${diasSemana[date.getDay()]})`;
+                        } catch {
+                          return '___';
+                        }
+                      })()}
+                    </span>
                     para o dia {' '}
                     <input type="date" className="mx-1 w-32 border-b border-black outline-none text-center" value={introDateEnd} onChange={e => setIntroDateEnd(e.target.value)}/>, {' '}
-                    <span className="text-xs ml-2">{formatDateForExport(introDateEnd, true)}</span>
+                    <span className="text-xs ml-2">
+                      {(() => {
+                        try {
+                          const date = new Date(introDateEnd);
+                          if (isNaN(date.getTime())) return '___';
+                          const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+                          const diasSemana = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+                          return `${date.getDate()} de ${meses[date.getMonth()]} de ${date.getFullYear()} (${diasSemana[date.getDay()]})`;
+                        } catch {
+                          return '___';
+                        }
+                      })()}
+                    </span>
                     ao Senhor Fiscal Administrativo.
                   </div>
 
-                  {/* Resto do código permanece igual... */}
-                  {/* ... (mantenha todo o resto do código igual) ... */}
+                  {/* ... (resto do código permanece igual) ... */}
 
               </div>
           </div>
