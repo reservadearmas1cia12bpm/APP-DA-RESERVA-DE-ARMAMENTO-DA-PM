@@ -48,21 +48,22 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
 
   const loadHistory = () => setHistory(StorageService.getDailyParts());
 
-  // Helper: format date por extenso (com opção de incluir dia da semana) - VERSÃO SIMPLIFICADA
+  // Helper: format date por extenso (com opção de incluir dia da semana)
   const formatDateLong = (isoDate: string | undefined | null, includeWeekday = true) => {
-    if (!isoDate) return '___';
+    if (!isoDate || isoDate === '') return '___';
     
     try {
-      // Criar data de forma mais simples
-      const dateObj = new Date(isoDate);
+      // Tentar criar a data diretamente
+      let dateObj = new Date(isoDate);
       
-      // Se for inválida, tentar formato alternativo
+      // Se for inválida, tentar adicionar timezone
       if (isNaN(dateObj.getTime())) {
-        const altDateObj = new Date(isoDate + 'T00:00:00');
-        if (isNaN(altDateObj.getTime())) {
-          return '___';
-        }
-        return formatDateLong(isoDate + 'T00:00:00', includeWeekday);
+        dateObj = new Date(isoDate + 'T00:00:00');
+      }
+      
+      // Se ainda for inválida, retornar placeholder
+      if (isNaN(dateObj.getTime())) {
+        return '___';
       }
 
       const meses = [
@@ -181,12 +182,17 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
       if (!armorer) return;
       const authName = `${armorer.name} ${armorer.rank ? `- ${armorer.rank}` : ''}`;
       
-      console.log('Datas para exportação:', {
+      // DEBUG: Verificar o que está nas datas
+      console.log('DEBUG - Datas antes da exportação:', {
         introDateStart,
         introDateEnd,
         formattedStart: formatDateLong(introDateStart, true),
         formattedEnd: formatDateLong(introDateEnd, true)
       });
+
+      // Garantir que as datas sejam strings válidas
+      const dateStartFormatted = formatDateLong(introDateStart, true);
+      const dateEndFormatted = formatDateLong(introDateEnd, true);
       
       // create a copy of data but with intro dates formatted por extenso (with weekday)
       const exportData: DailyPart = {
@@ -199,11 +205,11 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
         signature: signature || undefined,
         content: {
             header: { fiscal: fiscalName, dateVisto, crpm, bpm, city },
-            // replace dateStart/dateEnd with formatted long strings (including weekday)
+            // Usar as datas já formatadas
             intro: { 
               bpm, 
-              dateStart: formatDateLong(introDateStart, true), 
-              dateEnd: formatDateLong(introDateEnd, true) 
+              dateStart: dateStartFormatted, 
+              dateEnd: dateEndFormatted 
             } as any,
             part1: schedule,
             part2: part2Text,
@@ -212,6 +218,8 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
             part5: { substitute: substituteName, city: signCity, date: signDate }
         }
       };
+
+      console.log('DEBUG - Dados enviados para exportação:', exportData);
 
       if(type === 'word') DocumentService.generateWord(exportData);
       else DocumentService.generatePDF(exportData);
@@ -291,38 +299,14 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                     </tbody>
                   </table>
 
-                  {/* TEXTO INTRODUTÓRIO - VERSÃO SIMPLIFICADA */}
+                  {/* TEXTO INTRODUTÓRIO - AGORA MOSTRANDO AS DATAS FORMATADAS NA TELA */}
                   <div className="text-left mb-6 text-sm">
                     Parte diária do armeiro do <span className="font-bold uppercase">{bpm || '___'}</span> batalhão do dia {' '}
                     <input type="date" className="mx-1 w-32 border-b border-black outline-none text-center" value={introDateStart} onChange={e => setIntroDateStart(e.target.value)}/> {' '}
-                    <span className="text-xs ml-2">
-                      {(() => {
-                        try {
-                          const date = new Date(introDateStart);
-                          if (isNaN(date.getTime())) return '___';
-                          const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-                          const diasSemana = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
-                          return `${date.getDate()} de ${meses[date.getMonth()]} de ${date.getFullYear()} (${diasSemana[date.getDay()]})`;
-                        } catch {
-                          return '___';
-                        }
-                      })()}
-                    </span>
+                    <span className="text-xs ml-2">{formatDateLong(introDateStart, true)}</span>
                     para o dia {' '}
                     <input type="date" className="mx-1 w-32 border-b border-black outline-none text-center" value={introDateEnd} onChange={e => setIntroDateEnd(e.target.value)}/>, {' '}
-                    <span className="text-xs ml-2">
-                      {(() => {
-                        try {
-                          const date = new Date(introDateEnd);
-                          if (isNaN(date.getTime())) return '___';
-                          const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-                          const diasSemana = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
-                          return `${date.getDate()} de ${meses[date.getMonth()]} de ${date.getFullYear()} (${diasSemana[date.getDay()]})`;
-                        } catch {
-                          return '___';
-                        }
-                      })()}
-                    </span>
+                    <span className="text-xs ml-2">{formatDateLong(introDateEnd, true)}</span>
                     ao Senhor Fiscal Administrativo.
                   </div>
 
