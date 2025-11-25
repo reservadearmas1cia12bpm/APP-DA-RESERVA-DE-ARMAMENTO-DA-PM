@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Material, Personnel, Armorer, DailyPart, DailyPartSchedule, MaterialCategory, MaterialStatus } from '../types';
 import { StorageService } from '../services/storageService';
@@ -441,100 +440,102 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                   </div>
 
                   {/* PARTE V - PASSAGEM DE SERVIÇO */}
-<div className="mt-8">
-  <div className="text-center font-bold mb-4 uppercase">
-    V – PARTE: PASSAGEM DE SERVIÇO
-  </div>
+                  <div className="mt-8">
+                    <div className="text-center font-bold mb-4 uppercase">
+                      V – PARTE: PASSAGEM DE SERVIÇO
+                    </div>
 
-  <div className="text-left mb-8 text-sm">
-    FI-LA AO MEU SUBSTITUTO LEGAL, O{' '}
-    <input
-      className="border-b border-black w-64 text-center outline-none font-bold uppercase mx-1 font-serif"
-      placeholder="GRADUAÇÃO / NOME"
-      value={substituteName}
-      onChange={e => setSubstituteName(e.target.value)}
-    />,{' '}
-    A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
-  </div>
+                    <div className="text-left mb-8 text-sm">
+                      FI-LA AO MEU SUBSTITUTO LEGAL, O{' '}
+                      <input
+                        className="border-b border-black w-64 text-center outline-none font-bold uppercase mx-1 font-serif"
+                        placeholder="GRADUAÇÃO / NOME"
+                        value={substituteName}
+                        onChange={e => setSubstituteName(e.target.value)}
+                      />,{' '}
+                      A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
+                    </div>
 
-  {/* DATA NO FORMATO: Cidade, dia de mês de ano (sem dia da semana) */}
-  <div className="text-center mb-8 uppercase font-bold">
-    <input
-      className="border-b border-black w-40 text-center outline-none uppercase font-serif font-bold"
-      placeholder="CIDADE"
-      value={signCity}
-      onChange={e => setSignCity(e.target.value)}
-    />{', '}
+                    {/* DATA NO FORMATO: Cidade, dia de mês de ano (sem dia da semana) */}
+                    <div className="text-center mb-8 uppercase font-bold">
+                      <input
+                        className="border-b border-black w-40 text-center outline-none uppercase font-serif font-bold"
+                        placeholder="CIDADE"
+                        value={signCity}
+                        onChange={e => setSignCity(e.target.value)}
+                      />{', '}
 
-    {/* DATA FORMATADA - sem dia da semana */}
-    <span className="border-b border-black px-2 font-serif">
-      {(() => {
-        if (!signDate) return "____ de __________ de ______";
+                      {/* DATA FORMATADA - sem dia da semana */}
+                      <span className="border-b border-black px-2 font-serif">
+                        {(() => {
+                          if (!signDate) return "____ de __________ de ______";
 
-        const meses = [
-          "janeiro","fevereiro","março","abril","maio","junho",
-          "julho","agosto","setembro","outubro","novembro","dezembro"
-        ];
+                          const meses = [
+                            "janeiro","fevereiro","março","abril","maio","junho",
+                            "julho","agosto","setembro","outubro","novembro","dezembro"
+                          ];
 
-        const dataObj = new Date(signDate + "T00:00:00");
+                          const dataObj = new Date(signDate + "T00:00:00");
 
-        const dia = dataObj.getDate();
-        const mes = meses[dataObj.getMonth()];
-        const ano = dataObj.getFullYear();
+                          const dia = dataObj.getDate();
+                          const mes = meses[dataObj.getMonth()];
+                          const ano = dataObj.getFullYear();
 
-        return `${dia} de ${mes} de ${ano}`;
-      })()}
-    </span>
+                          return `${dia} de ${mes} de ${ano}`;
+                        })()}
+                      </span>
 
-    {/* Input escondido apenas para salvar a data no estado */}
-    <input
-      type="date"
-      className="hidden"
-      value={signDate}
-      onChange={e => setSignDate(e.target.value)}
-    />
-  </div>
+                      {/* Input escondido apenas para salvar a data no estado */}
+                      <input
+                        type="date"
+                        className="hidden"
+                        value={signDate}
+                        onChange={e => setSignDate(e.target.value)}
+                      />
+                    </div>
 
-  {/* ASSINATURA */}
-  <div className="flex flex-col items-center mt-12">
-    <div className="mb-2 h-16 flex items-end justify-center w-full">
-      {signature ? (
-        <img src={signature} alt="Assinatura" className="h-12 object-contain" />
-      ) : (
-        <div className="text-center">
-          <div className="text-gray-400 italic text-sm border-b border-gray-400 w-64 pb-1">
-            Assinatura Digital
-          </div>
-          <div className="text-xs text-gray-500 mt-1">
-            ___________________________________
-          </div>
-        </div>
-      )}
-    </div>
+                    {/* ASSINATURA */}
+                    <div className="flex flex-col items-center mt-12">
+                      <div className="mb-2 h-16 flex items-end justify-center w-full">
+                        {signature ? (
+                          <img src={signature} alt="Assinatura" className="h-12 object-contain" />
+                        ) : (
+                          <div className="text-center">
+                            <div className="text-gray-400 italic text-sm border-b border-gray-400 w-64 pb-1">
+                              Assinatura Digital
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              ___________________________________
+                            </div>
+                          </div>
+                        )}
+                      </div>
 
-    <div className="text-center">
-      <div className="font-bold uppercase text-sm">
-        {armorer?.name || 'NOME DO ARMEIRO'}
-      </div>
-      <div className="uppercase text-xs">MAT: {armorer?.matricula || '000000'}</div>
-    </div>
+                      <div className="text-center">
+                        <div className="font-bold uppercase text-sm">
+                          {armorer?.name || 'NOME DO ARMEIRO'}
+                        </div>
+                        <div className="uppercase text-xs">MAT: {armorer?.matricula || '000000'}</div>
+                      </div>
 
-    <div className="mt-4 w-full max-w-sm">
-      {!signature ? (
-        <SignaturePad onSave={setSignature} label="Assinar Agora" />
-      ) : (
-        <button
-          onClick={() => setSignature(null)}
-          className="text-xs text-red-500 hover:underline mt-2 w-full text-center"
-        >
-          Limpar Assinatura
-        </button>
-      )}
-    </div>
-  </div>
-</div>
-  </div>
-</div>
+                      <div className="mt-4 w-full max-w-sm">
+                        {!signature ? (
+                          <SignaturePad onSave={setSignature} label="Assinar Agora" />
+                        ) : (
+                          <button
+                            onClick={() => setSignature(null)}
+                            className="text-xs text-red-500 hover:underline mt-2 w-full text-center"
+                          >
+                            Limpar Assinatura
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
   );
 };
+
 export default DailyBookPage;
