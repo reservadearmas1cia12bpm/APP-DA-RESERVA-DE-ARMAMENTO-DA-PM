@@ -447,7 +447,170 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                     ao Senhor Fiscal Administrativo.
                   </div>
 
-                  {/* ... (resto das partes II, III, IV permanecem iguais) ... */}
+                  {/* ESCALA DE SERVIÇO */}
+                  <div className="mb-6">
+                    <div className="text-center font-bold mb-2 uppercase">I – PARTE: ESCALA DE SERVIÇO</div>
+                    
+                    <button 
+                      onClick={() => setShowScheduleEditor(!showScheduleEditor)}
+                      className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded mb-2 flex items-center gap-1"
+                    >
+                      <Edit3 size={12}/> {showScheduleEditor ? 'Visualizar' : 'Editar'} Escala
+                    </button>
+
+                    {showScheduleEditor ? (
+                      // Tabela editável
+                      <table className="w-full border-collapse border border-black text-center text-sm">
+                        <thead>
+                          <tr>
+                            <th className="border border-black bg-gray-100 p-1">GRAD</th>
+                            <th className="border border-black bg-gray-100 p-1">Nº</th>
+                            <th className="border border-black bg-gray-100 p-1">NOME</th>
+                            <th className="border border-black bg-gray-100 p-1">FUNÇÃO</th>
+                            <th className="border border-black bg-gray-100 p-1">HORÁRIO</th>
+                            <th className="border border-black bg-gray-100 p-1 w-8">Ação</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {schedule.map((row, idx) => (
+                            <tr key={idx}>
+                              <td className="border border-black p-0">
+                                <input 
+                                  className="w-full text-center p-1 outline-none font-serif" 
+                                  value={row.grad} 
+                                  onChange={e => {
+                                    const n = [...schedule];
+                                    n[idx].grad = e.target.value;
+                                    setSchedule(n);
+                                  }}
+                                />
+                              </td>
+                              <td className="border border-black p-0">
+                                <input 
+                                  className="w-full text-center p-1 outline-none font-serif" 
+                                  value={row.num} 
+                                  onChange={e => {
+                                    const n = [...schedule];
+                                    n[idx].num = e.target.value;
+                                    setSchedule(n);
+                                  }}
+                                />
+                              </td>
+                              <td className="border border-black p-0">
+                                <input 
+                                  className="w-full text-center p-1 outline-none font-serif" 
+                                  value={row.name} 
+                                  onChange={e => {
+                                    const n = [...schedule];
+                                    n[idx].name = e.target.value;
+                                    setSchedule(n);
+                                  }}
+                                />
+                              </td>
+                              <td className="border border-black p-0">
+                                <input 
+                                  className="w-full text-center p-1 outline-none font-serif" 
+                                  value={row.func} 
+                                  onChange={e => {
+                                    const n = [...schedule];
+                                    n[idx].func = e.target.value;
+                                    setSchedule(n);
+                                  }}
+                                />
+                              </td>
+                              <td className="border border-black p-0">
+                                <input 
+                                  className="w-full text-center p-1 outline-none font-serif" 
+                                  value={row.horario} 
+                                  onChange={e => {
+                                    const n = [...schedule];
+                                    n[idx].horario = e.target.value;
+                                    setSchedule(n);
+                                  }}
+                                />
+                              </td>
+                              <td className="border border-black p-0 text-center">
+                                <button 
+                                  onClick={() => {
+                                    const n = [...schedule];
+                                    n.splice(idx, 1);
+                                    setSchedule(n);
+                                  }} 
+                                  className="text-red-500 hover:bg-red-50 p-1"
+                                >
+                                  <Trash2 size={14}/>
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      // Tabela para visualização/exportação - CORRIGIDA
+                      <table className="w-full border-collapse border border-black text-center text-sm">
+                        <thead>                     
+                          <tr>
+                            <th className="border border-black bg-gray-100 p-1">GRAD</th>
+                            <th className="border border-black bg-gray-100 p-1">Nº</th>
+                            <th className="border border-black bg-gray-100 p-1">NOME</th>
+                            <th className="border border-black bg-gray-100 p-1">FUNÇÃO</th>
+                            <th className="border border-black bg-gray-100 p-1">HORÁRIO</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {schedule.map((row, idx) => (
+                            <tr key={idx}>
+                              <td className="border border-black p-1 font-serif">{row.grad || '-'}</td>
+                              <td className="border border-black p-1 font-serif">{row.num || ''}</td>
+                              <td className="border border-black p-1 font-serif">{row.name || ''}</td>
+                              <td className="border border-black p-1 font-serif">{row.func || ''}</td>
+                              <td className="border border-black p-1 font-serif">{row.horario || ''}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                    
+                    <button 
+                      onClick={() => setSchedule([...schedule, {grad:'', num:'', name:'', func:'', horario:''}])} 
+                      className="text-xs text-blue-600 flex items-center gap-1 mt-1 hover:underline"
+                    >
+                      <Plus size={12}/> Adicionar Linha
+                    </button>
+                  </div>
+
+                  {/* PARTE II - INSTRUÇÃO */}
+                  <div className="mb-6">
+                    <div className="text-center font-bold mb-2 uppercase">II – PARTE: INSTRUÇÃO</div>
+                    <textarea 
+                      className="w-full border-none outline-none resize-none font-serif text-[12pt] leading-normal text-left" 
+                      rows={2} 
+                      value={part2Text} 
+                      onChange={e => setPart2Text(e.target.value)}
+                    />
+                  </div>
+
+                  {/* PARTE III - ASSUNTOS GERAIS/ADMINISTRATIVOS */}
+                  <div className="mb-6">
+                    <div className="text-center font-bold mb-2 uppercase">III – PARTE: ASSUNTOS GERAIS/ADMINISTRATIVOS</div>
+                    <textarea 
+                      className="w-full border-none outline-none resize-none font-serif text-[11pt] leading-normal min-h-[300px] text-left" 
+                      value={part3Text} 
+                      onChange={e => setPart3Text(e.target.value)}
+                      style={{ whiteSpace: 'pre-line' }}
+                    />
+                  </div>
+
+                  {/* PARTE IV - OCORRÊNCIAS */}
+                  <div className="mb-6">
+                    <div className="text-center font-bold mb-1 uppercase">IV – PARTE: OCORRÊNCIAS</div>
+                    <div className="text-left mb-2 text-sm">Comunico-vos que:</div>
+                    <textarea 
+                      className="w-full border-none outline-none resize-none font-serif text-[12pt] leading-normal min-h-[80px] text-left" 
+                      value={part4Text} 
+                      onChange={e => setPart4Text(e.target.value)}
+                    />
+                  </div>
 
                   {/* PARTE V - PASSAGEM DE SERVIÇO - FORMATO CORRETO: "Cidade, dia de mês de ano" */}
                   <div className="mt-8">
