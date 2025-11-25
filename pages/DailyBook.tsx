@@ -28,8 +28,8 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
   const [bpm, setBpm] = useState('');
   const [city, setCity] = useState('FORTALEZA');
   
-  const [introDateStart, setIntroDateStart] = useState(new Date().toISOString().split('T')[0]);
-  const [introDateEnd, setIntroDateEnd] = useState(new Date().toISOString().split('T')[0]);
+  const [introDateStart, setIntroDateStart] = useState('');
+  const [introDateEnd, setIntroDateEnd] = useState('');
 
   const [schedule, setSchedule] = useState<DailyPartSchedule[]>([
       { grad: 'CB', num: '30671015', name: 'WILLIAM SIQUEIRA', func: 'Armeiro', horario: '07h-07h' }
@@ -41,10 +41,20 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
 
   const [substituteName, setSubstituteName] = useState('');
   const [signCity, setSignCity] = useState('FORTALEZA');
-  const [signDate, setSignDate] = useState(new Date().toISOString().split('T')[0]);
+  const [signDate, setSignDate] = useState('');
   const [signature, setSignature] = useState<string | null>(null);
 
-  useEffect(() => { loadHistory(); }, []);
+  useEffect(() => { 
+    loadHistory(); 
+    // Inicializar com datas atuais
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    
+    setIntroDateStart(today.toISOString().split('T')[0]);
+    setIntroDateEnd(tomorrow.toISOString().split('T')[0]);
+    setSignDate(today.toISOString().split('T')[0]);
+  }, []);
 
   const loadHistory = () => setHistory(StorageService.getDailyParts());
 
@@ -53,15 +63,12 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
     if (!isoDate || isoDate === '') return '___';
     
     try {
-      // Tentar criar a data diretamente
       let dateObj = new Date(isoDate);
       
-      // Se for inválida, tentar adicionar timezone
       if (isNaN(dateObj.getTime())) {
         dateObj = new Date(isoDate + 'T00:00:00');
       }
       
-      // Se ainda for inválida, retornar placeholder
       if (isNaN(dateObj.getTime())) {
         return '___';
       }
@@ -77,11 +84,14 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
       const dia = dateObj.getDate();
       const mes = meses[dateObj.getMonth()];
       const ano = dateObj.getFullYear();
-      const weekday = diasSemana[dateObj.getDay()];
       
-      return includeWeekday ? `${dia} de ${mes} de ${ano} (${weekday})` : `${dia} de ${mes} de ${ano}`;
+      if (includeWeekday) {
+        const weekday = diasSemana[dateObj.getDay()];
+        return `${dia} de ${mes} de ${ano} (${weekday})`;
+      } else {
+        return `${dia} de ${mes} de ${ano}`;
+      }
     } catch (e) {
-      console.error('Erro ao formatar data:', isoDate, e);
       return '___';
     }
   };
@@ -133,27 +143,50 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
   const startNewReport = () => {
     setCurrentPartId(Date.now().toString());
     setIsDraft(true);
-    setDateVisto(''); setFiscalName(''); setCrpm(''); setBpm(''); setCity('FORTALEZA');
+    setDateVisto(''); 
+    setFiscalName(''); 
+    setCrpm(''); 
+    setBpm(''); 
+    setCity('FORTALEZA');
+    
+    // DATAS AUTOMÁTICAS: hoje e amanhã
     const today = new Date();
-    const tomorrow = new Date(today); tomorrow.setDate(today.getDate()+1);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    
     setIntroDateStart(today.toISOString().split('T')[0]);
     setIntroDateEnd(tomorrow.toISOString().split('T')[0]);
     setSignDate(today.toISOString().split('T')[0]);
+    
     setSchedule([
-      { grad: armorer?.rank || 'CB', num: armorer?.numeral || armorer?.matricula || '30671015', name: armorer?.warName || armorer?.name || 'WILLIAM SIQUEIRA', func: 'Armeiro', horario: '07h-07h' }
+      { 
+        grad: armorer?.rank || 'CB', 
+        num: armorer?.numeral || armorer?.matricula || '30671015', 
+        name: armorer?.warName || armorer?.name || 'WILLIAM SIQUEIRA', 
+        func: 'Armeiro', 
+        horario: '07h-07h' 
+      }
     ]);
-    setPart2Text('Sem alterações.'); setPart4Text('Sem alterações a registrar.');
+    
+    setPart2Text('Sem alterações.'); 
+    setPart4Text('Sem alterações a registrar.');
     generateInventoryText();
-    setSubstituteName(''); setSignature(null);
+    setSubstituteName(''); 
+    setSignature(null);
     setShowScheduleEditor(false);
     setMode('EDITOR');
   };
 
   const handleSave = (status: 'DRAFT' | 'FINAL') => {
     if (!currentPartId || !armorer) return;
-    if (status === 'FINAL' && !signature) { alert("Assinatura digital obrigatória."); return; }
+    if (status === 'FINAL' && !signature) { 
+      alert("Assinatura digital obrigatória."); 
+      return; 
+    }
     
     const authName = `${armorer.name} ${armorer.rank ? `- ${armorer.rank}` : ''}`;
+    
+    // Preparar dados com datas formatadas para salvar
     const newPart: DailyPart = {
         id: currentPartId,
         createdAt: new Date().toISOString(),
@@ -163,15 +196,35 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
         status: status,
         signature: signature || undefined,
         content: {
-            header: { fiscal: fiscalName, dateVisto, crpm, bpm, city },
-            intro: { bpm, dateStart: introDateStart, dateEnd: introDateEnd },
+            header: { 
+              fiscal: fiscalName, 
+              dateVisto, 
+              crpm, 
+              bpm, 
+              city 
+            },
+            intro: { 
+              bpm, 
+              dateStart: introDateStart, 
+              dateEnd: introDateEnd,
+              // Adicionar versões por extenso para exportação
+              dateStartVerbose: formatDateLong(introDateStart, true),
+              dateEndVerbose: formatDateLong(introDateEnd, true)
+            },
             part1: schedule,
             part2: part2Text,
             part3: part3Text,
             part4: part4Text,
-            part5: { substitute: substituteName, city: signCity, date: signDate }
+            part5: { 
+              substitute: substituteName, 
+              city: signCity, 
+              date: signDate,
+              // Adicionar versão por extenso sem dia da semana
+              dateVerbose: formatDateLong(signDate, false)
+            }
         }
     };
+    
     StorageService.saveDailyPart(newPart);
     loadHistory();
     alert(status === 'DRAFT' ? "Salvo como rascunho." : "Finalizado!");
@@ -180,21 +233,10 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
 
   const exportDoc = (type: 'word' | 'pdf') => {
       if (!armorer) return;
+      
       const authName = `${armorer.name} ${armorer.rank ? `- ${armorer.rank}` : ''}`;
       
-      // DEBUG: Verificar o que está nas datas
-      console.log('DEBUG - Datas antes da exportação:', {
-        introDateStart,
-        introDateEnd,
-        formattedStart: formatDateLong(introDateStart, true),
-        formattedEnd: formatDateLong(introDateEnd, true)
-      });
-
-      // Garantir que as datas sejam strings válidas
-      const dateStartFormatted = formatDateLong(introDateStart, true);
-      const dateEndFormatted = formatDateLong(introDateEnd, true);
-      
-      // create a copy of data but with intro dates formatted por extenso (with weekday)
+      // Preparar dados para exportação com datas formatadas
       const exportData: DailyPart = {
         id: currentPartId || 'temp',
         createdAt: new Date().toISOString(),
@@ -204,25 +246,36 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
         status: isDraft ? 'DRAFT' : 'FINAL',
         signature: signature || undefined,
         content: {
-            header: { fiscal: fiscalName, dateVisto, crpm, bpm, city },
-            // Usar as datas já formatadas
+            header: { 
+              fiscal: fiscalName, 
+              dateVisto, 
+              crpm, 
+              bpm, 
+              city 
+            },
+            // Usar datas formatadas por extenso
             intro: { 
               bpm, 
-              dateStart: dateStartFormatted, 
-              dateEnd: dateEndFormatted 
+              dateStart: formatDateLong(introDateStart, true), 
+              dateEnd: formatDateLong(introDateEnd, true) 
             } as any,
             part1: schedule,
             part2: part2Text,
             part3: part3Text,
             part4: part4Text,
-            part5: { substitute: substituteName, city: signCity, date: signDate }
+            part5: { 
+              substitute: substituteName, 
+              city: signCity, 
+              date: formatDateLong(signDate, false) // SEM dia da semana
+            }
         }
       };
 
-      console.log('DEBUG - Dados enviados para exportação:', exportData);
-
-      if(type === 'word') DocumentService.generateWord(exportData);
-      else DocumentService.generatePDF(exportData);
+      if(type === 'word') {
+        DocumentService.generateWord(exportData);
+      } else {
+        DocumentService.generatePDF(exportData);
+      }
   };
 
   if (mode === 'LIST') {
@@ -230,20 +283,56 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
           <div className="p-6 space-y-6 animate-fade-in">
               <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold text-slate-800 dark:text-white">LIVRO DE ALTERAÇÕES</h2>
-                  <button onClick={startNewReport} className="flex items-center gap-2 bg-police-600 text-white px-4 py-2 rounded-lg hover:bg-police-700 font-medium"><Plus size={20}/> GERAR NOVA PARTE</button>
+                  <button onClick={startNewReport} className="flex items-center gap-2 bg-police-600 text-white px-4 py-2 rounded-lg hover:bg-police-700 font-medium">
+                    <Plus size={20}/> GERAR NOVA PARTE
+                  </button>
               </div>
               <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
                   <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
                       <thead className="bg-slate-50 dark:bg-slate-900/50 uppercase text-xs font-semibold">
-                          <tr><th className="px-6 py-4">Data</th><th className="px-6 py-4">Armeiro</th><th className="px-6 py-4">Status</th><th className="px-6 py-4 text-right">Ação</th></tr>
+                          <tr>
+                            <th className="px-6 py-4">Data</th>
+                            <th className="px-6 py-4">Armeiro</th>
+                            <th className="px-6 py-4">Status</th>
+                            <th className="px-6 py-4 text-right">Ação</th>
+                          </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                           {history.map(part => (
                              <tr key={part.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
                                  <td className="px-6 py-4">{formatDateLong(part.content.intro.dateStart, true)}</td>
                                  <td className="px-6 py-4">{part.authorName}</td>
-                                 <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs font-bold ${part.status==='FINAL'?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}`}>{part.status==='FINAL'?'Finalizado':'Rascunho'}</span></td>
-                                 <td className="px-6 py-4 text-right"><button onClick={() => { setCurrentPartId(part.id); setIsDraft(part.status==='DRAFT'); setFiscalName(part.content.header.fiscal); setDateVisto(part.content.header.dateVisto); setCrpm(part.content.header.crpm); setBpm(part.content.header.bpm); setCity(part.content.header.city); setIntroDateStart(part.content.intro.dateStart); setIntroDateEnd(part.content.intro.dateEnd); setSchedule(part.content.part1); setPart2Text(part.content.part2); setPart3Text(part.content.part3); setPart4Text(part.content.part4); setSubstituteName(part.content.part5.substitute); setSignCity(part.content.part5.city); setSignDate(part.content.part5.date); setSignature(part.signature || null); setMode('EDITOR'); }} className="text-blue-600 hover:underline flex items-center justify-end gap-1 w-full"><Edit3 size={16}/> Abrir</button></td>
+                                 <td className="px-6 py-4">
+                                   <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                                     part.status==='FINAL'?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'
+                                   }`}>
+                                     {part.status==='FINAL'?'Finalizado':'Rascunho'}
+                                   </span>
+                                 </td>
+                                 <td className="px-6 py-4 text-right">
+                                   <button onClick={() => { 
+                                     setCurrentPartId(part.id); 
+                                     setIsDraft(part.status==='DRAFT'); 
+                                     setFiscalName(part.content.header.fiscal); 
+                                     setDateVisto(part.content.header.dateVisto); 
+                                     setCrpm(part.content.header.crpm); 
+                                     setBpm(part.content.header.bpm); 
+                                     setCity(part.content.header.city); 
+                                     setIntroDateStart(part.content.intro.dateStart); 
+                                     setIntroDateEnd(part.content.intro.dateEnd); 
+                                     setSchedule(part.content.part1); 
+                                     setPart2Text(part.content.part2); 
+                                     setPart3Text(part.content.part3); 
+                                     setPart4Text(part.content.part4); 
+                                     setSubstituteName(part.content.part5.substitute); 
+                                     setSignCity(part.content.part5.city); 
+                                     setSignDate(part.content.part5.date); 
+                                     setSignature(part.signature || null); 
+                                     setMode('EDITOR'); 
+                                   }} className="text-blue-600 hover:underline flex items-center justify-end gap-1 w-full">
+                                     <Edit3 size={16}/> Abrir
+                                   </button>
+                                 </td>
                              </tr>
                           ))}
                       </tbody>
@@ -256,13 +345,27 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
   return (
       <div className="p-6 space-y-6 animate-fade-in min-h-screen bg-slate-100 dark:bg-slate-900">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm sticky top-0 z-10">
-              <button onClick={() => setMode('LIST')} className="flex items-center gap-2 text-slate-500 hover:text-slate-700"><ArrowLeft size={20}/> Voltar</button>
+              <button onClick={() => setMode('LIST')} className="flex items-center gap-2 text-slate-500 hover:text-slate-700">
+                <ArrowLeft size={20}/> Voltar
+              </button>
               <div className="flex gap-2">
-                  <button onClick={generateInventoryText} className="px-3 py-2 text-xs bg-slate-200 dark:bg-slate-700 rounded hover:bg-slate-300 flex items-center gap-1"><RefreshCw size={14}/> Reset Estoque</button>
-                  <button onClick={() => handleSave('DRAFT')} className="px-4 py-2 bg-amber-100 text-amber-800 rounded font-medium flex items-center gap-2"><Save size={18}/> Rascunho</button>
-                  <button onClick={() => exportDoc('word')} className="px-4 py-2 bg-blue-600 text-white rounded font-medium flex items-center gap-2"><FileText size={18}/> Word ABNT</button>
-                  <button onClick={() => exportDoc('pdf')} className="px-4 py-2 bg-red-600 text-white rounded font-medium flex items-center gap-2"><Printer size={18}/> PDF ABNT</button>
-                  {isDraft && <button onClick={() => handleSave('FINAL')} className="px-4 py-2 bg-green-600 text-white rounded font-medium flex items-center gap-2"><CheckCircle size={18}/> Finalizar</button>}
+                  <button onClick={generateInventoryText} className="px-3 py-2 text-xs bg-slate-200 dark:bg-slate-700 rounded hover:bg-slate-300 flex items-center gap-1">
+                    <RefreshCw size={14}/> Reset Estoque
+                  </button>
+                  <button onClick={() => handleSave('DRAFT')} className="px-4 py-2 bg-amber-100 text-amber-800 rounded font-medium flex items-center gap-2">
+                    <Save size={18}/> Rascunho
+                  </button>
+                  <button onClick={() => exportDoc('word')} className="px-4 py-2 bg-blue-600 text-white rounded font-medium flex items-center gap-2">
+                    <FileText size={18}/> Word ABNT
+                  </button>
+                  <button onClick={() => exportDoc('pdf')} className="px-4 py-2 bg-red-600 text-white rounded font-medium flex items-center gap-2">
+                    <Printer size={18}/> PDF ABNT
+                  </button>
+                  {isDraft && (
+                    <button onClick={() => handleSave('FINAL')} className="px-4 py-2 bg-green-600 text-white rounded font-medium flex items-center gap-2">
+                      <CheckCircle size={18}/> Finalizar
+                    </button>
+                  )}
               </div>
           </div>
 
@@ -272,26 +375,55 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                   {/* TITLE */}
                   <div className="text-center font-bold mb-6 text-lg">LIVRO DE ALTERAÇÕES</div>
 
-                  {/* HEADER - NOVO LAYOUT */}
+                  {/* HEADER */}
                   <table className="w-full border-collapse border border-black mb-6">
                     <tbody>
                       <tr>
                         <td className="w-[30%] border border-black p-2 align-top text-center">
                           <div className="text-xs font-bold">VISTO POR ALTERAÇÃO</div>
-                          <input type="date" className="w-32 text-center border-b border-black outline-none text-sm my-2" value={dateVisto} onChange={e => setDateVisto(e.target.value)}/>
+                          <input 
+                            type="date" 
+                            className="w-32 text-center border-b border-black outline-none text-sm my-2" 
+                            value={dateVisto} 
+                            onChange={e => setDateVisto(e.target.value)}
+                          />
                           <div className="mt-4 pt-1">
-                            <input type="text" className="w-full text-center font-bold text-xs uppercase outline-none" placeholder="NOME FISCAL" value={fiscalName} onChange={e => setFiscalName(e.target.value)}/>
+                            <input 
+                              type="text" 
+                              className="w-full text-center font-bold text-xs uppercase outline-none" 
+                              placeholder="NOME FISCAL" 
+                              value={fiscalName} 
+                              onChange={e => setFiscalName(e.target.value)}
+                            />
                             <div className="text-xs font-bold">RESPONSÁVEL</div>
                           </div>
                         </td>
                         <td className="w-[70%] border border-black p-2 text-center align-middle">
                           <div className="font-bold uppercase">POLÍCIA MILITAR DO CEARÁ</div>
                           <div className="flex justify-center gap-2 my-1 text-xs font-bold">
-                            <input type="text" className="w-20 text-center border-b border-black outline-none uppercase" placeholder="CRPM" value={crpm} onChange={e => setCrpm(e.target.value)}/>
+                            <input 
+                              type="text" 
+                              className="w-20 text-center border-b border-black outline-none uppercase" 
+                              placeholder="CRPM" 
+                              value={crpm} 
+                              onChange={e => setCrpm(e.target.value)}
+                            />
                             <span>CRPM</span>
-                            <input type="text" className="w-20 text-center border-b border-black outline-none uppercase" placeholder="BPM" value={bpm} onChange={e => setBpm(e.target.value)}/>
+                            <input 
+                              type="text" 
+                              className="w-20 text-center border-b border-black outline-none uppercase" 
+                              placeholder="BPM" 
+                              value={bpm} 
+                              onChange={e => setBpm(e.target.value)}
+                            />
                             <span>BPM</span>
-                            <input type="text" className="w-32 text-center border-b border-black outline-none uppercase" placeholder="CIDADE" value={city} onChange={e => setCity(e.target.value)}/>
+                            <input 
+                              type="text" 
+                              className="w-32 text-center border-b border-black outline-none uppercase" 
+                              placeholder="CIDADE" 
+                              value={city} 
+                              onChange={e => setCity(e.target.value)}
+                            />
                           </div>
                           <div className="font-bold underline uppercase mt-2">RESERVA DE ARMAMENTO</div>
                         </td>
@@ -299,22 +431,270 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                     </tbody>
                   </table>
 
-                  {/* TEXTO INTRODUTÓRIO - AGORA MOSTRANDO AS DATAS FORMATADAS NA TELA */}
+                  {/* INTRODUÇÃO COM DATAS POR EXTENSO E DIAS DA SEMANA */}
                   <div className="text-left mb-6 text-sm">
                     Parte diária do armeiro do <span className="font-bold uppercase">{bpm || '___'}</span> batalhão do dia {' '}
-                    <input type="date" className="mx-1 w-32 border-b border-black outline-none text-center" value={introDateStart} onChange={e => setIntroDateStart(e.target.value)}/> {' '}
+                    <input 
+                      type="date" 
+                      className="mx-1 w-32 border-b border-black outline-none text-center" 
+                      value={introDateStart} 
+                      onChange={e => setIntroDateStart(e.target.value)}
+                    /> {' '}
                     <span className="text-xs ml-2">{formatDateLong(introDateStart, true)}</span>
                     para o dia {' '}
-                    <input type="date" className="mx-1 w-32 border-b border-black outline-none text-center" value={introDateEnd} onChange={e => setIntroDateEnd(e.target.value)}/>, {' '}
+                    <input 
+                      type="date" 
+                      className="mx-1 w-32 border-b border-black outline-none text-center" 
+                      value={introDateEnd} 
+                      onChange={e => setIntroDateEnd(e.target.value)}
+                    />, {' '}
                     <span className="text-xs ml-2">{formatDateLong(introDateEnd, true)}</span>
                     ao Senhor Fiscal Administrativo.
                   </div>
 
-                  {/* ... (resto do código permanece igual) ... */}
+                  {/* ESCALA DE SERVIÇO */}
+                  <div className="mb-6">
+                    <div className="text-center font-bold mb-2 uppercase">I – PARTE: ESCALA DE SERVIÇO</div>
+                    
+                    <button 
+                      onClick={() => setShowScheduleEditor(!showScheduleEditor)}
+                      className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded mb-2 flex items-center gap-1"
+                    >
+                      <Edit3 size={12}/> {showScheduleEditor ? 'Visualizar' : 'Editar'} Escala
+                    </button>
 
+                    {showScheduleEditor ? (
+                      <table className="w-full border-collapse border border-black text-center text-sm">
+                        <thead>
+                          <tr>
+                            <th className="border border-black bg-gray-100 p-1">GRAD</th>
+                            <th className="border border-black bg-gray-100 p-1">Nº</th>
+                            <th className="border border-black bg-gray-100 p-1">NOME</th>
+                            <th className="border border-black bg-gray-100 p-1">FUNÇÃO</th>
+                            <th className="border border-black bg-gray-100 p-1">HORÁRIO</th>
+                            <th className="border border-black bg-gray-100 p-1 w-8">Ação</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {schedule.map((row, idx) => (
+                            <tr key={idx}>
+                              <td className="border border-black p-0">
+                                <input 
+                                  className="w-full text-center p-1 outline-none font-serif" 
+                                  value={row.grad} 
+                                  onChange={e => {
+                                    const n = [...schedule];
+                                    n[idx].grad = e.target.value;
+                                    setSchedule(n);
+                                  }}
+                                />
+                              </td>
+                              <td className="border border-black p-0">
+                                <input 
+                                  className="w-full text-center p-1 outline-none font-serif" 
+                                  value={row.num} 
+                                  onChange={e => {
+                                    const n = [...schedule];
+                                    n[idx].num = e.target.value;
+                                    setSchedule(n);
+                                  }}
+                                />
+                              </td>
+                              <td className="border border-black p-0">
+                                <input 
+                                  className="w-full text-center p-1 outline-none font-serif" 
+                                  value={row.name} 
+                                  onChange={e => {
+                                    const n = [...schedule];
+                                    n[idx].name = e.target.value;
+                                    setSchedule(n);
+                                  }}
+                                />
+                              </td>
+                              <td className="border border-black p-0">
+                                <input 
+                                  className="w-full text-center p-1 outline-none font-serif" 
+                                  value={row.func} 
+                                  onChange={e => {
+                                    const n = [...schedule];
+                                    n[idx].func = e.target.value;
+                                    setSchedule(n);
+                                  }}
+                                />
+                              </td>
+                              <td className="border border-black p-0">
+                                <input 
+                                  className="w-full text-center p-1 outline-none font-serif" 
+                                  value={row.horario} 
+                                  onChange={e => {
+                                    const n = [...schedule];
+                                    n[idx].horario = e.target.value;
+                                    setSchedule(n);
+                                  }}
+                                />
+                              </td>
+                              <td className="border border-black p-0 text-center">
+                                <button 
+                                  onClick={() => {
+                                    const n = [...schedule];
+                                    n.splice(idx, 1);
+                                    setSchedule(n);
+                                  }} 
+                                  className="text-red-500 hover:bg-red-50 p-1"
+                                >
+                                  <Trash2 size={14}/>
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <table className="w-full border-collapse border border-black text-center text-sm">
+                        <thead>                     
+                          <tr>
+                            <th className="border border-black bg-gray-100 p-1">GRAD</th>
+                            <th className="border border-black bg-gray-100 p-1">Nº</th>
+                            <th className="border border-black bg-gray-100 p-1">NOME</th>
+                            <th className="border border-black bg-gray-100 p-1">FUNÇÃO</th>
+                            <th className="border border-black bg-gray-100 p-1">HORÁRIO</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {schedule.map((row, idx) => (
+                            <tr key={idx}>
+                              <td className="border border-black p-1 font-serif">{row.grad || '-'}</td>
+                              <td className="border border-black p-1 font-serif">{row.num || ''}</td>
+                              <td className="border border-black p-1 font-serif">{row.name || ''}</td>
+                              <td className="border border-black p-1 font-serif">{row.func || ''}</td>
+                              <td className="border border-black p-1 font-serif">{row.horario || ''}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                    
+                    <button 
+                      onClick={() => setSchedule([...schedule, {grad:'', num:'', name:'', func:'', horario:''}])} 
+                      className="text-xs text-blue-600 flex items-center gap-1 mt-1 hover:underline"
+                    >
+                      <Plus size={12}/> Adicionar Linha
+                    </button>
+                  </div>
+
+                  {/* PARTE II - INSTRUÇÃO */}
+                  <div className="mb-6">
+                    <div className="text-center font-bold mb-2 uppercase">II – PARTE: INSTRUÇÃO</div>
+                    <textarea 
+                      className="w-full border-none outline-none resize-none font-serif text-[12pt] leading-normal text-left" 
+                      rows={2} 
+                      value={part2Text} 
+                      onChange={e => setPart2Text(e.target.value)}
+                    />
+                  </div>
+
+                  {/* PARTE III - ASSUNTOS GERAIS/ADMINISTRATIVOS */}
+                  <div className="mb-6">
+                    <div className="text-center font-bold mb-2 uppercase">III – PARTE: ASSUNTOS GERAIS/ADMINISTRATIVOS</div>
+                    <textarea 
+                      className="w-full border-none outline-none resize-none font-serif text-[11pt] leading-normal min-h-[300px] text-left" 
+                      value={part3Text} 
+                      onChange={e => setPart3Text(e.target.value)}
+                      style={{ whiteSpace: 'pre-line' }}
+                    />
+                  </div>
+
+                  {/* PARTE IV - OCORRÊNCIAS */}
+                  <div className="mb-6">
+                    <div className="text-center font-bold mb-1 uppercase">IV – PARTE: OCORRÊNCIAS</div>
+                    <div className="text-left mb-2 text-sm">Comunico-vos que:</div>
+                    <textarea 
+                      className="w-full border-none outline-none resize-none font-serif text-[12pt] leading-normal min-h-[80px] text-left" 
+                      value={part4Text} 
+                      onChange={e => setPart4Text(e.target.value)}
+                    />
+                  </div>
+
+                  {/* PARTE V - PASSAGEM DE SERVIÇO - FORMATO CORRETO: "Cidade, dia de mês de ano" */}
+                  <div className="mt-8">
+                    <div className="text-center font-bold mb-4 uppercase">
+                      V – PARTE: PASSAGEM DE SERVIÇO
+                    </div>
+
+                    <div className="text-left mb-8 text-sm">
+                      FI-LA AO MEU SUBSTITUTO LEGAL, O{' '}
+                      <input
+                        className="border-b border-black w-64 text-center outline-none font-bold uppercase mx-1 font-serif"
+                        placeholder="GRADUAÇÃO / NOME"
+                        value={substituteName}
+                        onChange={e => setSubstituteName(e.target.value)}
+                      />,{' '}
+                      A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
+                    </div>
+
+                    {/* FORMATO: Cidade, dia de mês de ano (SEM dia da semana) */}
+                    <div className="text-center mb-8 uppercase font-bold">
+                      <input
+                        className="border-b border-black w-40 text-center outline-none uppercase font-serif font-bold"
+                        placeholder="CIDADE"
+                        value={signCity}
+                        onChange={e => setSignCity(e.target.value)}
+                      />
+                      {', '}
+                      <span className="border-b border-black px-2 font-serif">
+                        {formatDateLong(signDate, false)} {/* SEM dia da semana */}
+                      </span>
+                      
+                      {/* Input escondido para edição da data */}
+                      <input
+                        type="date"
+                        className="hidden"
+                        value={signDate}
+                        onChange={e => setSignDate(e.target.value)}
+                      />
+                    </div>
+
+                    {/* ASSINATURA */}
+                    <div className="flex flex-col items-center mt-12">
+                      <div className="mb-2 h-16 flex items-end justify-center w-full">
+                        {signature ? (
+                          <img src={signature} alt="Assinatura" className="h-12 object-contain" />
+                        ) : (
+                          <div className="text-center">
+                            <div className="text-gray-400 italic text-sm border-b border-gray-400 w-64 pb-1">
+                              Assinatura Digital
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              ___________________________________
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="text-center">
+                        <div className="font-bold uppercase text-sm">
+                          {armorer?.name || 'NOME DO ARMEIRO'}
+                        </div>
+                        <div className="uppercase text-xs">MAT: {armorer?.matricula || '000000'}</div>
+                      </div>
+
+                      <div className="mt-4 w-full max-w-sm">
+                        {!signature ? (
+                          <SignaturePad onSave={setSignature} label="Assinar Agora" />
+                        ) : (
+                          <button
+                            onClick={() => setSignature(null)}
+                            className="text-xs text-red-500 hover:underline mt-2 w-full text-center"
+                          >
+                            Limpar Assinatura
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-          </div>
-      </div>
+            </div>
   );
 };
 
