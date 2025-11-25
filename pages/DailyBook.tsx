@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Material, Personnel, Armorer, DailyPart, DailyPartSchedule, MaterialCategory, MaterialStatus } from '../types';
 import { StorageService } from '../services/storageService';
@@ -47,6 +48,28 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
   useEffect(() => { loadHistory(); }, []);
 
   const loadHistory = () => setHistory(StorageService.getDailyParts());
+
+  // Helper: format date por extenso (com opção de incluir dia da semana)
+  const formatDateLong = (isoDate: string | undefined | null, includeWeekday = true) => {
+    if (!isoDate) return '';
+    try {
+      const dataObj = new Date(isoDate + 'T00:00:00');
+      const meses = [
+        'janeiro','fevereiro','março','abril','maio','junho',
+        'julho','agosto','setembro','outubro','novembro','dezembro'
+      ];
+      const diasSemana = [
+        'domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'
+      ];
+      const dia = dataObj.getDate();
+      const mes = meses[dataObj.getMonth()];
+      const ano = dataObj.getFullYear();
+      const weekday = diasSemana[dataObj.getDay()];
+      return includeWeekday ? `${dia} de ${mes} de ${ano} (${weekday})` : `${dia} de ${mes} de ${ano}`;
+    } catch (e) {
+      return isoDate;
+    }
+  };
 
   const generateInventoryText = () => {
     const getStats = (cat: MaterialCategory) => {
@@ -143,7 +166,8 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
   const exportDoc = (type: 'word' | 'pdf') => {
       if (!armorer) return;
       const authName = `${armorer.name} ${armorer.rank ? `- ${armorer.rank}` : ''}`;
-      const data: DailyPart = {
+      // create a copy of data but with intro dates formatted por extenso (with weekday)
+      const exportData: DailyPart = {
         id: currentPartId || 'temp',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -153,7 +177,8 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
         signature: signature || undefined,
         content: {
             header: { fiscal: fiscalName, dateVisto, crpm, bpm, city },
-            intro: { bpm, dateStart: introDateStart, dateEnd: introDateEnd },
+            // replace dateStart/dateEnd with formatted long strings (including weekday)
+            intro: { bpm, dateStart: formatDateLong(introDateStart, true), dateEnd: formatDateLong(introDateEnd, true) } as any,
             part1: schedule,
             part2: part2Text,
             part3: part3Text,
@@ -162,8 +187,8 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
         }
       };
 
-      if(type === 'word') DocumentService.generateWord(data);
-      else DocumentService.generatePDF(data);
+      if(type === 'word') DocumentService.generateWord(exportData);
+      else DocumentService.generatePDF(exportData);
   };
 
   if (mode === 'LIST') {
@@ -181,7 +206,7 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                           {history.map(part => (
                              <tr key={part.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
-                                 <td className="px-6 py-4">{new Date(part.content.intro.dateStart).toLocaleDateString('pt-BR')}</td>
+                                 <td className="px-6 py-4">{formatDateLong(part.content.intro.dateStart, true)}</td>
                                  <td className="px-6 py-4">{part.authorName}</td>
                                  <td className="px-6 py-4"><span className={`px-2 py-1 rounded-full text-xs font-bold ${part.status==='FINAL'?'bg-green-100 text-green-800':'bg-amber-100 text-amber-800'}`}>{part.status==='FINAL'?'Finalizado':'Rascunho'}</span></td>
                                  <td className="px-6 py-4 text-right"><button onClick={() => { setCurrentPartId(part.id); setIsDraft(part.status==='DRAFT'); setFiscalName(part.content.header.fiscal); setDateVisto(part.content.header.dateVisto); setCrpm(part.content.header.crpm); setBpm(part.content.header.bpm); setCity(part.content.header.city); setIntroDateStart(part.content.intro.dateStart); setIntroDateEnd(part.content.intro.dateEnd); setSchedule(part.content.part1); setPart2Text(part.content.part2); setPart3Text(part.content.part3); setPart4Text(part.content.part4); setSubstituteName(part.content.part5.substitute); setSignCity(part.content.part5.city); setSignDate(part.content.part5.date); setSignature(part.signature || null); setMode('EDITOR'); }} className="text-blue-600 hover:underline flex items-center justify-end gap-1 w-full"><Edit3 size={16}/> Abrir</button></td>
@@ -243,8 +268,10 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                   <div className="text-left mb-6 text-sm">
                     Parte diária do armeiro do <span className="font-bold uppercase">{bpm || '___'}</span> batalhão do dia {' '}
                     <input type="date" className="mx-1 w-32 border-b border-black outline-none text-center" value={introDateStart} onChange={e => setIntroDateStart(e.target.value)}/> {' '}
+                    <span className="text-xs ml-2">{formatDateLong(introDateStart, true)}</span>
                     para o dia {' '}
                     <input type="date" className="mx-1 w-32 border-b border-black outline-none text-center" value={introDateEnd} onChange={e => setIntroDateEnd(e.target.value)}/>, {' '}
+                    <span className="text-xs ml-2">{formatDateLong(introDateEnd, true)}</span>
                     ao Senhor Fiscal Administrativo.
                   </div>
 
@@ -430,7 +457,7 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
     A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
   </div>
 
-  {/* DATA NO FORMATO: Cidade, dia de mês de ano */}
+  {/* DATA NO FORMATO: Cidade, dia de mês de ano (sem dia da semana) */}
   <div className="text-center mb-8 uppercase font-bold">
     <input
       className="border-b border-black w-40 text-center outline-none uppercase font-serif font-bold"
@@ -439,7 +466,7 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
       onChange={e => setSignCity(e.target.value)}
     />{', '}
 
-    {/* DATA FORMATADA */}
+    {/* DATA FORMATADA - sem dia da semana */}
     <span className="border-b border-black px-2 font-serif">
       {(() => {
         if (!signDate) return "____ de __________ de ______";
@@ -506,4 +533,8 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
     </div>
   </div>
 </div>
-
+  </div>
+</div>
+  );
+};
+export default DailyBookPage;
