@@ -490,17 +490,17 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                     </tbody>
                   </table>
 
-                  {/* INTRODUÇÃO COM DATAS POR EXTENSO E DIAS DA SEMANA - FORMATO CORRETO */}
-                  <div className="text-left mb-6 text-sm">
-                    Parte diária do armeiro do <span className="font-bold uppercase">{bpm || '___'}</span> batalhão do dia {' '}
-                    <span className="font-bold">
-                      {formatDateLong(introDateStart, true)}
-                    </span>
-                    {' '}para o dia{' '}
-                    <span className="font-bold">
-                      {formatDateLong(introDateEnd, true)}
-                    </span>
-                    , ao Senhor Fiscal Administrativo.
+                 {/* INTRODUÇÃO COM DATAS POR EXTENSO E DIAS DA SEMANA - FORMATO CORRETO */}
+<div className="text-justify mb-6 text-sm">
+  Parte diária do armeiro do <span className="font-bold uppercase">{bpm || '___'}</span> batalhão do dia {' '}
+  <span className="font-bold">
+    {formatDateLong(introDateStart, true)}
+  </span>
+  {' '}para o dia{' '}
+  <span className="font-bold">
+    {formatDateLong(introDateEnd, true)}
+  </span>
+  , ao Senhor Fiscal Administrativo.
                     
                     {/* Inputs de data para edição - mantidos escondidos mas acessíveis */}
                     <div className="mt-2 text-xs text-gray-500 flex gap-4 justify-center">
@@ -698,15 +698,15 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                       V – PARTE: PASSAGEM DE SERVIÇO
                     </div>
 
-                    <div className="text-left mb-8 text-sm">
-                      FI-LA AO MEU SUBSTITUTO LEGAL, O{' '}
-                      <input
-                        className="border-b border-black w-64 text-center outline-none font-bold uppercase mx-1 font-serif"
-                        placeholder="GRADUAÇÃO / NOME"
-                        value={substituteName}
-                        onChange={e => setSubstituteName(e.target.value)}
-                      />,{' '}
-                      A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
+                    <div className="text-justify mb-8 text-sm">
+  FI-LA AO MEU SUBSTITUTO LEGAL, O{' '}
+  <input
+    className="border-b border-black w-64 text-center outline-none font-bold uppercase mx-1 font-serif"
+    placeholder="GRADUAÇÃO / NOME"
+    value={substituteName}
+    onChange={e => setSubstituteName(e.target.value)}
+  />,{' '}
+  A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
                     </div>
 
                     {/* FORMATO: Cidade, dia de mês de ano (SEM dia da semana) */}
