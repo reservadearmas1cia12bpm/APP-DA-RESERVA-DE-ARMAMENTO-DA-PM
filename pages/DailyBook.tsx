@@ -643,8 +643,8 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                         onChange={e => setSignCity(e.target.value)}
                       />
                       {', '}
-                      <span className="border-b border-black px-2 font-serif">
-                        {/* DATA POR EXTENSO SEM DIA DA SEMANA */}
+                      <span className="px-2 font-serif">
+                        {/* DATA POR EXTENSO SEM DIA DA SEMANA - SEM SUBLINHADO */}
                         {formatDateLong(signDate, false)}
                       </span>
                       
