@@ -613,87 +613,86 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                   </div>
 
                   {/* PARTE V - PASSAGEM DE SERVIÇO - FORMATO CORRETO: "Cidade, dia de mês de ano" */}
-                  <div className="mt-8">
-                    <div className="text-center font-bold mb-4 uppercase">
-                      V – PARTE: PASSAGEM DE SERVIÇO
-                    </div>
+<div className="mt-8">
+  <div className="text-center font-bold mb-4 uppercase">
+    V – PARTE: PASSAGEM DE SERVIÇO
+  </div>
 
-                    <div className="text-left mb-8 text-sm">
-                      FI-LA AO MEU SUBSTITUTO LEGAL, O{' '}
-                      <input
-                        className="border-b border-black w-64 text-center outline-none font-bold uppercase mx-1 font-serif"
-                        placeholder="GRADUAÇÃO / NOME"
-                        value={substituteName}
-                        onChange={e => setSubstituteName(e.target.value)}
-                      />,{' '}
-                      A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
-                    </div>
+  <div className="text-left mb-8 text-sm">
+    FI-LA AO MEU SUBSTITUTO LEGAL, O{' '}
+    <input
+      className="border-b border-black w-64 text-center outline-none font-bold uppercase mx-1 font-serif"
+      placeholder="GRADUAÇÃO / NOME"
+      value={substituteName}
+      onChange={e => setSubstituteName(e.target.value)}
+    />,{' '}
+    A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
+  </div>
 
-                    {/* FORMATO: Cidade, dia de mês de ano (SEM dia da semana) */}
-                    <div className="text-center mb-8 uppercase font-bold">
-                      <input
-                        className="border-b border-black w-40 text-center outline-none uppercase font-serif font-bold"
-                        placeholder="CIDADE"
-                        value={signCity}
-                        onChange={e => setSignCity(e.target.value)}
-                      />
-                      {', '}
-                      <span className="border-b border-black px-2 font-serif">
-                        {/* DATA POR EXTENSO SEM DIA DA SEMANA */}
-                        {formatDateLong(signDate, false)}
-                      </span>
-                      
-                      {/* Input escondido para edição da data */}
-                      <input
-                        type="date"
-                        className="hidden"
-                        value={signDate}
-                        onChange={e => setSignDate(e.target.value)}
-                      />
-                    </div>
+  {/* FORMATO: Cidade, dia de mês de ano (SEM dia da semana) */}
+  <div className="text-center mb-8 uppercase font-bold">
+    <input
+      className="border-b border-black w-40 text-center outline-none uppercase font-serif font-bold"
+      placeholder="CIDADE"
+      value={signCity}
+      onChange={e => setSignCity(e.target.value)}
+    />
+    {', '}
+    <span className="border-b border-black px-2 font-serif min-w-[200px] inline-block">
+      {/* DATA POR EXTENSO SEM DIA DA SEMANA - EXIBINDO NO EDITOR */}
+      {formatDateLong(signDate, false)}
+    </span>
+    
+    {/* Input para edição da data - agora visível para facilitar */}
+    <div className="mt-2 text-xs text-gray-500">
+      <label className="flex items-center justify-center gap-2">
+        <Calendar size={14} />
+        Alterar data: 
+        <input
+          type="date"
+          className="border border-gray-300 rounded px-2 py-1 text-xs"
+          value={signDate}
+          onChange={e => setSignDate(e.target.value)}
+        />
+      </label>
+    </div>
+  </div>
 
-                    {/* ASSINATURA */}
-                    <div className="flex flex-col items-center mt-12">
-                      <div className="mb-2 h-16 flex items-end justify-center w-full">
-                        {signature ? (
-                          <img src={signature} alt="Assinatura" className="h-12 object-contain" />
-                        ) : (
-                          <div className="text-center">
-                            <div className="text-gray-400 italic text-sm border-b border-gray-400 w-64 pb-1">
-                              Assinatura Digital
-                            </div>
-                            <div className="text-xs text-gray-500 mt-1">
-                              ___________________________________
-                            </div>
-                          </div>
-                        )}
-                      </div>
+  {/* ASSINATURA */}
+  <div className="flex flex-col items-center mt-12">
+    <div className="mb-2 h-16 flex items-end justify-center w-full">
+      {signature ? (
+        <img src={signature} alt="Assinatura" className="h-12 object-contain" />
+      ) : (
+        <div className="text-center">
+          <div className="text-gray-400 italic text-sm border-b border-gray-400 w-64 pb-1">
+            Assinatura Digital
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            ___________________________________
+          </div>
+        </div>
+      )}
+    </div>
 
-                      <div className="text-center">
-                        <div className="font-bold uppercase text-sm">
-                          {armorer?.name || 'NOME DO ARMEIRO'}
-                        </div>
-                        <div className="uppercase text-xs">MAT: {armorer?.matricula || '000000'}</div>
-                      </div>
+    <div className="text-center">
+      <div className="font-bold uppercase text-sm">
+        {armorer?.name || 'NOME DO ARMEIRO'}
+      </div>
+      <div className="uppercase text-xs">MAT: {armorer?.matricula || '000000'}</div>
+    </div>
 
-                      <div className="mt-4 w-full max-w-sm">
-                        {!signature ? (
-                          <SignaturePad onSave={setSignature} label="Assinar Agora" />
-                        ) : (
-                          <button
-                            onClick={() => setSignature(null)}
-                            className="text-xs text-red-500 hover:underline mt-2 w-full text-center"
-                          >
-                            Limpar Assinatura
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-  );
-};
-
-export default DailyBookPage;
+    <div className="mt-4 w-full max-w-sm">
+      {!signature ? (
+        <SignaturePad onSave={setSignature} label="Assinar Agora" />
+      ) : (
+        <button
+          onClick={() => setSignature(null)}
+          className="text-xs text-red-500 hover:underline mt-2 w-full text-center"
+        >
+          Limpar Assinatura
+        </button>
+      )}
+    </div>
+  </div>
+</div>
