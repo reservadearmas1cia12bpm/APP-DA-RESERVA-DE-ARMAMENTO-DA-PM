@@ -699,14 +699,14 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                     </div>
 
                     <div className="text-justify mb-8 text-sm">
-  FI-LA AO MEU SUBSTITUTO LEGAL, O{' '}
+  Fi-la ao meu substituto legal, O{' '}
   <input
     className="border-b border-black w-64 text-center outline-none font-bold uppercase mx-1 font-serif"
     placeholder="GRADUAÇÃO / NOME"
     value={substituteName}
     onChange={e => setSubstituteName(e.target.value)}
   />,{' '}
-  A QUEM TRANSMITI TODAS AS ORDENS EM VIGOR, BEM COMO TODO MATERIAL A MEU CARGO.
+  a quem transmiti todas as ordens em vigor, bem como todo o material a meu cargo.
                     </div>
 
                     {/* FORMATO: Cidade, dia de mês de ano (SEM dia da semana) */}
