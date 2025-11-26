@@ -53,22 +53,34 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
 
   const loadHistory = () => setHistory(StorageService.getDailyParts());
 
-  // Helper: format date por extenso (com opção de incluir dia da semana)
+  // Helper: format date por extenso (com opção de incluir dia da semana) - CORRIGIDA
   const formatDateLong = (isoDate: string | undefined | null, includeWeekday = true) => {
     if (!isoDate || isoDate === '') return '___';
     
     try {
       let dateObj: Date;
       
-      // Tenta parsear a data diretamente
-      if (isoDate.includes('T')) {
-        dateObj = new Date(isoDate);
-      } else {
-        // Se for apenas YYYY-MM-DD, adiciona timezone
-        dateObj = new Date(isoDate + 'T00:00:00-03:00'); // Timezone de Fortaleza
+      // Remove qualquer timezone ou hora que possa estar presente
+      const dateOnly = isoDate.split('T')[0];
+      
+      // Verifica se é formato YYYY-MM-DD
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
+        const [year, month, day] = dateOnly.split('-').map(Number);
+        dateObj = new Date(year, month - 1, day);
+      } 
+      // Verifica se é formato DD/MM/YYYY
+      else if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateOnly)) {
+        const [day, month, year] = dateOnly.split('/').map(Number);
+        dateObj = new Date(year, month - 1, day);
+      }
+      // Tenta parsear como está
+      else {
+        dateObj = new Date(dateOnly);
       }
       
+      // Verifica se a data é válida
       if (isNaN(dateObj.getTime())) {
+        console.warn('Data inválida:', isoDate);
         return '___';
       }
 
@@ -92,6 +104,7 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
         return `${dia} de ${mes} de ${ano}`;
       }
     } catch (e) {
+      console.error('Erro ao formatar data:', e, 'Data:', isoDate);
       return '___';
     }
   };
@@ -227,6 +240,16 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
 
   const exportDoc = (type: 'word' | 'pdf') => {
       if (!armorer) return;
+      
+      // DEBUG: Verificar as datas antes da exportação
+      console.log('DEBUG - Datas para exportação:', {
+        introDateStart,
+        introDateEnd, 
+        signDate,
+        formattedStart: formatDateLong(introDateStart, true),
+        formattedEnd: formatDateLong(introDateEnd, true),
+        formattedSign: formatDateLong(signDate, false)
+      });
       
       const authName = `${armorer.name} ${armorer.rank ? `- ${armorer.rank}` : ''}`;
       
