@@ -425,31 +425,41 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
                     </tbody>
                   </table>
 
-                  {/* INTRODUÇÃO COM DATAS POR EXTENSO E DIAS DA SEMANA */}
+                  {/* INTRODUÇÃO COM DATAS POR EXTENSO E DIAS DA SEMANA - FORMATO CORRETO */}
                   <div className="text-left mb-6 text-sm">
                     Parte diária do armeiro do <span className="font-bold uppercase">{bpm || '___'}</span> batalhão do dia {' '}
-                    <input 
-                      type="date" 
-                      className="mx-1 w-32 border-b border-black outline-none text-center" 
-                      value={introDateStart} 
-                      onChange={e => setIntroDateStart(e.target.value)}
-                    /> {' '}
-                    <span className="text-xs ml-2">
-                      {/* DATA POR EXTENSO COM DIA DA SEMANA */}
+                    <span className="font-bold">
                       {formatDateLong(introDateStart, true)}
                     </span>
-                    para o dia {' '}
-                    <input 
-                      type="date" 
-                      className="mx-1 w-32 border-b border-black outline-none text-center" 
-                      value={introDateEnd} 
-                      onChange={e => setIntroDateEnd(e.target.value)}
-                    />, {' '}
-                    <span className="text-xs ml-2">
-                      {/* DATA POR EXTENSO COM DIA DA SEMANA */}
+                    {' '}para o dia{' '}
+                    <span className="font-bold">
                       {formatDateLong(introDateEnd, true)}
                     </span>
-                    ao Senhor Fiscal Administrativo.
+                    , ao Senhor Fiscal Administrativo.
+                    
+                    {/* Inputs de data para edição - mantidos escondidos mas acessíveis */}
+                    <div className="mt-2 text-xs text-gray-500 flex gap-4 justify-center">
+                      <label className="flex items-center gap-2">
+                        <Calendar size={12} />
+                        Data inicial: 
+                        <input
+                          type="date"
+                          className="border border-gray-300 rounded px-2 py-1 text-xs"
+                          value={introDateStart}
+                          onChange={e => setIntroDateStart(e.target.value)}
+                        />
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <Calendar size={12} />
+                        Data final: 
+                        <input
+                          type="date"
+                          className="border border-gray-300 rounded px-2 py-1 text-xs"
+                          value={introDateEnd}
+                          onChange={e => setIntroDateEnd(e.target.value)}
+                        />
+                      </label>
+                    </div>
                   </div>
 
                   {/* ESCALA DE SERVIÇO */}
