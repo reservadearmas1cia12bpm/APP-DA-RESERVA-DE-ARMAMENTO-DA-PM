@@ -1,5 +1,5 @@
 // =============================================
-//  documentService.ts (VERSÃO CORRIGIDA - FORMATAÇÃO + CENTRALIZAÇÃO)
+//  documentService.ts (VERSÃO CORRIGIDA - NÃO FORMATA DATAS JÁ FORMATADAS)
 // =============================================
 
 export class DocumentService {
@@ -13,16 +13,33 @@ export class DocumentService {
         const part4 = data.content?.part4 || "Sem alterações a registrar.";
         const part5 = data.content?.part5 || {};
 
-        // Formata datas
-        const dateVisto = header.dateVisto ? new Date(header.dateVisto).toLocaleDateString('pt-BR') : '___/___/_____';
-        const dateStart = intro.dateStart ? new Date(intro.dateStart).toLocaleDateString('pt-BR') : '___/___/_____';
-        const dateEnd = intro.dateEnd ? new Date(intro.dateEnd).toLocaleDateString('pt-BR') : '___/___/_____';
+        // VERIFICA SE AS DATAS JÁ ESTÃO FORMATADAS (contém "de" = já está por extenso)
+        const isDateFormatted = (dateStr: string) => {
+            return dateStr && dateStr.includes('de');
+        };
+
+        // Formata datas APENAS se não estiverem já formatadas
+        const dateVisto = header.dateVisto 
+            ? (isDateFormatted(header.dateVisto) ? header.dateVisto : this.formatDate(header.dateVisto))
+            : '___';
+
+        const dateStart = intro.dateStart 
+            ? (isDateFormatted(intro.dateStart) ? intro.dateStart : this.formatDate(intro.dateStart))
+            : '___';
+
+        const dateEnd = intro.dateEnd 
+            ? (isDateFormatted(intro.dateEnd) ? intro.dateEnd : this.formatDate(intro.dateEnd))
+            : '___';
 
         // Dados do armeiro
         const armorerName = data.authorName || 'NOME DO ARMEIRO';
         const armorerMatricula = data.authorId || '000000';
         const armorerCity = part5.city || 'FORTALEZA';
-        const armorerDate = part5.date ? new Date(part5.date).toLocaleDateString('pt-BR') : '__/__/____';
+        
+        // Data da assinatura - verifica se já está formatada
+        const armorerDate = part5.date 
+            ? (isDateFormatted(part5.date) ? part5.date : this.formatDate(part5.date, false))
+            : '___';
 
         const escalaTabela = this.generateScheduleTable(part1);
 
@@ -153,6 +170,41 @@ export class DocumentService {
 </html>`;
     }
 
+    // Função auxiliar para formatar datas APENAS se necessário
+    private static formatDate(dateString: string, includeWeekday: boolean = true): string {
+        if (!dateString) return '___';
+        
+        try {
+            // Tenta parsear a data
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                return '___';
+            }
+
+            const meses = [
+                'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+                'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+            ];
+            const diasSemana = [
+                'domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 
+                'quinta-feira', 'sexta-feira', 'sábado'
+            ];
+            
+            const dia = date.getDate();
+            const mes = meses[date.getMonth()];
+            const ano = date.getFullYear();
+            
+            if (includeWeekday) {
+                const weekday = diasSemana[date.getDay()];
+                return `${dia} de ${mes} de ${ano} (${weekday})`;
+            } else {
+                return `${dia} de ${mes} de ${ano}`;
+            }
+        } catch (e) {
+            return '___';
+        }
+    }
+
     private static generateScheduleTable(schedule: any[]): string {
         if (!schedule || schedule.length === 0) {
             return '<p>Nenhuma escala definida.</p>';
@@ -161,7 +213,6 @@ export class DocumentService {
         let tableHtml = `
         <table>
             <thead>
-              
                 <tr>
                     <th>GRAD</th>
                     <th>Nº</th>
