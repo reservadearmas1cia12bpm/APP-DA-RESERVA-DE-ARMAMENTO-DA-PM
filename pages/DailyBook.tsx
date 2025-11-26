@@ -109,6 +109,45 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
     }
   };
 
+  // Função específica para exportação que garante datas válidas
+  const formatDateForExport = (isoDate: string | undefined | null, includeWeekday = true) => {
+    if (!isoDate || isoDate === '') return '___';
+    
+    try {
+      // Garante que temos apenas a parte da data (YYYY-MM-DD)
+      const dateStr = isoDate.split('T')[0];
+      const [year, month, day] = dateStr.split('-').map(Number);
+      
+      const dateObj = new Date(year, month - 1, day);
+      
+      if (isNaN(dateObj.getTime())) {
+        return '___';
+      }
+
+      const meses = [
+        'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+        'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+      ];
+      const diasSemana = [
+        'domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 
+        'quinta-feira', 'sexta-feira', 'sábado'
+      ];
+      
+      const dia = dateObj.getDate();
+      const mes = meses[dateObj.getMonth()];
+      const ano = dateObj.getFullYear();
+      
+      if (includeWeekday) {
+        const weekday = diasSemana[dateObj.getDay()];
+        return `${dia} de ${mes} de ${ano} (${weekday})`;
+      } else {
+        return `${dia} de ${mes} de ${ano}`;
+      }
+    } catch (e) {
+      return '___';
+    }
+  };
+
   const generateInventoryText = () => {
     const getStats = (cat: MaterialCategory) => {
         const items = materials.filter(m => m.category === cat);
@@ -241,19 +280,45 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
   const exportDoc = (type: 'word' | 'pdf') => {
       if (!armorer) return;
       
+      const authName = `${armorer.name} ${armorer.rank ? `- ${armorer.rank}` : ''}`;
+      
       // DEBUG: Verificar as datas antes da exportação
       console.log('DEBUG - Datas para exportação:', {
         introDateStart,
         introDateEnd, 
         signDate,
-        formattedStart: formatDateLong(introDateStart, true),
-        formattedEnd: formatDateLong(introDateEnd, true),
-        formattedSign: formatDateLong(signDate, false)
+        formattedStart: formatDateForExport(introDateStart, true),
+        formattedEnd: formatDateForExport(introDateEnd, true),
+        formattedSign: formatDateForExport(signDate, false)
       });
       
-      const authName = `${armorer.name} ${armorer.rank ? `- ${armorer.rank}` : ''}`;
-      
-      // DATAS JÁ FORMATADAS PARA EXPORTAÇÃO
+      // Cria um objeto com as datas JÁ FORMATADAS para exportação
+      const exportContent = {
+          header: { 
+            fiscal: fiscalName, 
+            dateVisto: dateVisto || '___', 
+            crpm, 
+            bpm, 
+            city 
+          },
+          intro: { 
+            bpm, 
+            // Usa a função específica para exportação
+            dateStart: formatDateForExport(introDateStart, true),
+            dateEnd: formatDateForExport(introDateEnd, true)
+          },
+          part1: schedule,
+          part2: part2Text,
+          part3: part3Text,
+          part4: part4Text,
+          part5: { 
+            substitute: substituteName, 
+            city: signCity, 
+            // Usa a função específica para exportação
+            date: formatDateForExport(signDate, false)
+          }
+      };
+
       const exportData: DailyPart = {
         id: currentPartId || 'temp',
         createdAt: new Date().toISOString(),
@@ -262,30 +327,7 @@ export const DailyBookPage: React.FC<DailyBookProps> = ({ materials, personnel, 
         authorName: authName,
         status: isDraft ? 'DRAFT' : 'FINAL',
         signature: signature || undefined,
-        content: {
-            header: { 
-              fiscal: fiscalName, 
-              dateVisto, 
-              crpm, 
-              bpm, 
-              city 
-            },
-            // DATAS POR EXTENSO COM DIA DA SEMANA
-            intro: { 
-              bpm, 
-              dateStart: formatDateLong(introDateStart, true), // COM dia da semana
-              dateEnd: formatDateLong(introDateEnd, true)      // COM dia da semana
-            } as any,
-            part1: schedule,
-            part2: part2Text,
-            part3: part3Text,
-            part4: part4Text,
-            part5: { 
-              substitute: substituteName, 
-              city: signCity, 
-              date: formatDateLong(signDate, false) // SEM dia da semana
-            }
-        }
+        content: exportContent
       };
 
       if(type === 'word') {
